@@ -21,6 +21,9 @@ import com.cineflow.ai.data.cloud.CloudProjectSyncRepository
 import com.cineflow.ai.data.project.LocalProjectRepository
 import com.cineflow.ai.feature.editor.VideoEditorScreen
 import com.cineflow.ai.feature.editor.VideoEditorViewModel
+import com.cineflow.ai.feature.export.ExportVideoScreen
+import com.cineflow.ai.feature.export.ExportVideoViewModel
+import com.cineflow.ai.feature.export.ROUTE_EXPORT_VIDEO
 import com.cineflow.ai.feature.home.HomeDashboardScreen
 import com.cineflow.ai.feature.home.HomeDashboardViewModel
 import com.cineflow.ai.feature.home.ROUTE_HOME_DASHBOARD
@@ -164,6 +167,29 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
           onBackToProjects = {
             activeEditorProject = null
             currentRoute = ROUTE_PROJECT_MANAGEMENT
+          },
+          onNavigateToExport = {
+            activeEditorProject = editorViewModel.project.value
+            currentRoute = ROUTE_EXPORT_VIDEO
+          }
+        )
+      } else {
+        currentRoute = ROUTE_PROJECT_MANAGEMENT
+      }
+    }
+
+    ROUTE_EXPORT_VIDEO -> {
+      val targetProject = activeEditorProject
+      if (targetProject != null) {
+        val exportViewModel = remember(targetProject.projectId, targetProject.updatedAtEpochMillis) {
+          ExportVideoViewModel(localProjectRepository, targetProject)
+        }
+        ExportVideoScreen(
+          viewModel = exportViewModel,
+          isSignedIn = signedInUser != null,
+          onBackToEditor = {
+            activeEditorProject = exportViewModel.project.value
+            currentRoute = ROUTE_EDITOR_BOUNDARY
           }
         )
       } else {

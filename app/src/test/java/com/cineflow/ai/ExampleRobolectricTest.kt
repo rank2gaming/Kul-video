@@ -363,6 +363,76 @@ class ExampleRobolectricTest {
     assertEquals(3, clips16x9.size)
     assertEquals(3, clips9x16.size)
   }
+
+  @Test
+  fun exportVideoScreen_displaysReferenceUiUpdatesEstimatedSizeAndEnforcesAuthResolutionCap() = runBlocking {
+    val project = repository.createProject(
+      rawName = "Alpine Adventure",
+      aspectRatio = "9:16",
+      frameRateNum = 30,
+      resolutionLabel = "1080p",
+      durationMicros = 30_000_000L
+    ).getOrThrow()
+
+    val exportViewModel = com.cineflow.ai.feature.export.ExportVideoViewModel(repository, project)
+
+    composeTestRule.setContent {
+      CineFlowTheme {
+        com.cineflow.ai.feature.export.ExportVideoScreen(
+          viewModel = exportViewModel,
+          isSignedIn = false,
+          onBackToEditor = {}
+        )
+      }
+    }
+
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("export_video_screen").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("export_brand_header").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("export_device_capability_badge").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("export_video_preview_card").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("export_resolution_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("export_fps_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("export_format_codec_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("export_quality_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("export_bitrate_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("export_estimated_size_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("export_audio_settings_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("export_summary_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("export_video_submit_button").performScrollTo().assertIsDisplayed()
+
+    // Reference defaults: 1080p, 30 FPS, MP4, H.264, HIGH, 25.0 Mbps -> 245 MB
+    assertEquals(245, exportViewModel.estimatedSizeMb.value)
+
+    // Changing codec to H.265 reduces estimated file size
+    exportViewModel.selectVideoCodec(com.cineflow.ai.feature.export.ExportVideoCodec.H265)
+    assertTrue(exportViewModel.estimatedSizeMb.value < 245)
+
+    // Restore H.264 -> back to 245 MB
+    exportViewModel.selectVideoCodec(com.cineflow.ai.feature.export.ExportVideoCodec.H264)
+    assertEquals(245, exportViewModel.estimatedSizeMb.value)
+
+    // Unsigned export at 1080p triggers Section 19 RequiresAuthForHighRes gate
+    exportViewModel.startExport(isSignedIn = false, instantForTest = true)
+    assertTrue(exportViewModel.exportJobState.value is com.cineflow.ai.feature.export.ExportJobState.RequiresAuthForHighRes)
+
+    // Downgrading to 720p for unsigned session completes export and marks project "Exported"
+    exportViewModel.downgradeTo720pAndExport(instantForTest = true)
+    assertTrue(exportViewModel.exportJobState.value is com.cineflow.ai.feature.export.ExportJobState.Completed)
+    assertEquals(1, exportViewModel.exportHistory.value.size)
+    assertEquals("720p", exportViewModel.exportHistory.value.first().resolution.chipLabel)
+
+    // Signed-in session can export at 8K / 240 FPS with explicit frame duplication policy note
+    exportViewModel.selectResolution(com.cineflow.ai.feature.export.ExportResolutionOption.RES_8K)
+    exportViewModel.selectFps(240)
+    exportViewModel.startExport(isSignedIn = true, instantForTest = true)
+    val completed8k = exportViewModel.exportJobState.value as com.cineflow.ai.feature.export.ExportJobState.Completed
+    assertEquals("8K", completed8k.record.resolution.chipLabel)
+    assertEquals(4320, completed8k.record.widthPx)
+    assertEquals(7680, completed8k.record.heightPx)
+    assertEquals(240, completed8k.record.fps)
+    assertNotNull(completed8k.record.frameRatePolicyNote)
+  }
 }
 
 

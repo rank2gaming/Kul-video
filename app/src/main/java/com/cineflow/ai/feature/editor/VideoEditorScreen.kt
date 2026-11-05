@@ -84,6 +84,7 @@ fun VideoEditorScreen(
   viewModel: VideoEditorViewModel,
   isSignedIn: Boolean,
   onBackToProjects: () -> Unit,
+  onNavigateToExport: (() -> Unit)? = null,
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
@@ -231,7 +232,14 @@ fun VideoEditorScreen(
             onBackToProjects()
           },
           onOpenResolutionSheet = { showResolutionDialog = true },
-          onOpenExportSheet = { showExportDialog = true }
+          onOpenExportSheet = {
+            viewModel.pausePlayback()
+            if (onNavigateToExport != null) {
+              onNavigateToExport()
+            } else {
+              showExportDialog = true
+            }
+          }
         )
       }
 
