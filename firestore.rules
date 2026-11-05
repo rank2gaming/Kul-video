@@ -1,0 +1,119 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 1: Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitive Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Validation Helper: UserProfile
+    function isValidUserProfile(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+             data.publicUid is string && data.publicUid.size() == 10 && data.publicUid.matches('^CF[0-9]{8}$') &&
+             data.username is string && data.username.size() >= 3 && data.username.size() <= 30 &&
+             (!('displayName' in data) || data.displayName == null || (data.displayName is string && data.displayName.size() <= 80)) &&
+             (!('email' in data) || data.email == null || (data.email is string && data.email.size() <= 120)) &&
+             (!('photoUrl' in data) || data.photoUrl == null || (data.photoUrl is string && data.photoUrl.size() <= 500)) &&
+             data.planTier is string && data.planTier == 'FREE' &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // Validation Helper: CloudProjectMetadata
+    function isValidCloudProjectMetadata(data, userId, projectId) {
+      return data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+             data.projectId is string && data.projectId == projectId && isValidId(data.projectId) &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 80 &&
+             data.aspectRatio is string && data.aspectRatio.size() >= 1 && data.aspectRatio.size() <= 20 &&
+             data.durationMicros is int && data.durationMicros >= 0 &&
+             data.frameRateNum is int && data.frameRateNum >= 1 && data.frameRateNum <= 240 &&
+             data.frameRateDen is int && data.frameRateDen >= 1 && data.frameRateDen <= 1001 &&
+             data.trackCount is int && data.trackCount >= 0 && data.trackCount <= 100 &&
+             data.clipCount is int && data.clipCount >= 0 && data.clipCount <= 5000 &&
+             data.missingMediaCount is int && data.missingMediaCount >= 0 && data.missingMediaCount <= 5000 &&
+             data.schemaVersion is int && data.schemaVersion >= 1 && data.schemaVersion <= 100 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // Collection: /users/{userId}
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().keys().hasAll(['userId', 'publicUid', 'username', 'planTier', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'publicUid', 'username', 'displayName', 'email', 'photoUrl', 'planTier', 'createdAt', 'updatedAt']) &&
+                       isValidUserProfile(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidUserProfile(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().publicUid == existing().publicUid &&
+                       incoming().planTier == existing().planTier &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['username', 'displayName', 'email', 'photoUrl', 'updatedAt']);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // Subcollection: /users/{userId}/projects/{projectId}
+      match /projects/{projectId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(projectId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(projectId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'projectId', 'name', 'aspectRatio', 'durationMicros',
+                           'frameRateNum', 'frameRateDen', 'trackCount', 'clipCount',
+                           'missingMediaCount', 'schemaVersion', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'projectId', 'name', 'aspectRatio', 'durationMicros',
+                           'frameRateNum', 'frameRateDen', 'trackCount', 'clipCount',
+                           'missingMediaCount', 'schemaVersion', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidCloudProjectMetadata(incoming(), userId, projectId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(projectId) &&
+                         isValidCloudProjectMetadata(incoming(), userId, projectId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().projectId == existing().projectId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'name', 'aspectRatio', 'durationMicros', 'frameRateNum', 'frameRateDen',
+                           'trackCount', 'clipCount', 'missingMediaCount', 'schemaVersion', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(projectId);
+      }
+    }
+  }
+}

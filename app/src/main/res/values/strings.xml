@@ -1,0 +1,91 @@
+<resources>
+    <string name="app_name">CineFlow AI</string>
+    <string name="brand_prefix">CineFlow </string>
+    <string name="brand_suffix">AI</string>
+    <string name="brand_subtitle_editor">AI Powered Video Editor</string>
+    <string name="search_placeholder">Search tools, templates, effects...</string>
+    <string name="hero_badge_ai_powered">AI POWERED</string>
+    <string name="hero_title_turn_ideas">Turn Your Ideas\nInto Stunning Videos</string>
+    <string name="hero_cta_get_started">Get Started</string>
+    <string name="tool_video_edit">Video Edit</string>
+    <string name="tool_text_to_speech">Text-to-Speech</string>
+    <string name="tool_video_to_language">Video-to-Language</string>
+    <string name="tool_image_to_video">Image to Video</string>
+    <string name="tool_ai_effects">AI Effects</string>
+    <string name="tool_ai_avatar">AI Avatar</string>
+    <string name="tool_auto_subtitles">Auto Subtitles</string>
+    <string name="tool_more_tools">More Tools</string>
+    <string name="tool_remove_bg">Remove BG</string>
+    <string name="section_trending_templates">Trending Templates</string>
+    <string name="action_see_all">See All</string>
+    <string name="template_trending">Trending</string>
+    <string name="template_love">Love</string>
+    <string name="template_travel">Travel</string>
+    <string name="template_birthday">Birthday</string>
+    <string name="template_festival">Festival</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_projects">Projects</string>
+    <string name="nav_notifications">Notifications</string>
+    <string name="nav_settings">Settings</string>
+    <string name="auth_sign_in_with_google">Sign in with Google</string>
+    <string name="auth_continue_offline_skip">Skip (Local-Only Mode)</string>
+    <string name="auth_sign_out">Sign Out</string>
+    <string name="coming_soon_title">Coming Soon</string>
+    <string name="coming_soon_body">%1$s is scheduled in a future CineFlow AI development phase. Only Video Edit is active in the initial workflow.</string>
+    <string name="action_got_it">Got It</string>
+    <string name="cd_overflow_menu">More options menu</string>
+    <string name="cd_notifications">Notifications</string>
+    <string name="cd_profile_avatar">Account and profile</string>
+    <string name="cd_search_icon">Search</string>
+    <string name="cd_clear_search">Clear search query</string>
+
+    <!-- Project Management Screen Strings -->
+    <string name="pm_title">Project Management</string>
+    <string name="pm_subtitle">Manage your video projects</string>
+    <string name="pm_search_placeholder">Search projects...</string>
+    <string name="pm_create_new_project">Create New\nProject</string>
+    <string name="pm_tab_recent">Recent</string>
+    <string name="pm_tab_all_projects">All Projects</string>
+    <string name="pm_tab_favorites">Favorites</string>
+    <string name="pm_tag_project">Project</string>
+    <string name="pm_total_projects">Total Projects: %1$d</string>
+    <string name="pm_cloud_backup_available">Cloud Backup: Available</string>
+    <string name="pm_action_manage">Manage</string>
+    <string name="pm_empty_title">No Projects Yet</string>
+    <string name="pm_empty_body">Your local workspace is ready. Tap \"+ Create New Project\" above to create your first real locally persisted project.</string>
+    <string name="pm_cd_back">Back to Home Dashboard</string>
+    <string name="pm_cd_cloud_backup">Manual Cloud Backup</string>
+    <string name="pm_cd_settings">Settings</string>
+    <string name="pm_cd_sort">Sort projects</string>
+    <string name="pm_cd_project_options">Project options</string>
+
+    <!-- Create New Project Screen Strings (CineFlow AI Project Creation Screen.png) -->
+    <string name="cnp_title">Create New Project</string>
+    <string name="cnp_subtitle">Give a name to your project and start editing</string>
+    <string name="cnp_label_project_name">Project Name </string>
+    <string name="cnp_placeholder_project_name">Enter project name</string>
+    <string name="cnp_char_counter">%1$d / 100</string>
+    <string name="cnp_info_rename_later">You can change the project name later from Project Settings.</string>
+    <string name="cnp_action_create_project">Create Project</string>
+    <string name="cnp_action_cancel">Cancel</string>
+    <string name="cnp_cd_back">Back to Project Management</string>
+
+    <!-- Video Editor Workspace Strings (17_Video_Editor_Dashboard.jpg) -->
+    <string name="ve_cd_close">Close editor and return to Project Management</string>
+    <string name="ve_cd_brand_logo">CineFlow AI Logo</string>
+    <string name="ve_cd_resolution">Select export resolution and frame rate</string>
+    <string name="ve_action_export">Export</string>
+    <string name="ve_cd_fullscreen">Toggle fullscreen preview</string>
+    <string name="ve_cd_play_pause">Play or pause timeline preview</string>
+    <string name="ve_cd_clip_confinement">Toggle selected clip playhead confinement</string>
+    <string name="ve_cd_undo">Undo last edit</string>
+    <string name="ve_cd_redo">Redo edit</string>
+    <string name="ve_mute_clip">Mute\nclip</string>
+    <string name="ve_unmute_clip">Unmute\nclip</string>
+    <string name="ve_cover">Cover</string>
+    <string name="ve_add_audio">+  Add audio</string>
+    <string name="ve_cd_add_clip">Import video or photo clip</string>
+    <string name="ve_empty_preview_hint">Tap + to import video or photo</string>
+    <string name="ve_empty_track_hint">Tap + to add media to timeline</string>
+</resources>
+

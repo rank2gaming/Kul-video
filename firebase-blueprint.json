@@ -1,0 +1,148 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated CineFlow AI user profile with server-enforced Public User ID (CF + 8 digits).",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the account owner."
+        },
+        "publicUid": {
+          "type": "string",
+          "description": "Public User ID in format CF + 8 numeric digits (e.g. CF00000001)."
+        },
+        "username": {
+          "type": "string",
+          "description": "Display handle (3 to 30 characters)."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Optional full display name."
+        },
+        "email": {
+          "type": "string",
+          "description": "Optional verified account email."
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "Optional profile avatar URL."
+        },
+        "planTier": {
+          "type": "string",
+          "enum": ["FREE"],
+          "description": "Account subscription tier (payment integration disabled)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update server timestamp via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "publicUid",
+        "username",
+        "planTier",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CloudProjectMetadata": {
+      "title": "CloudProjectMetadata",
+      "description": "Synchronized project metadata for cross-device discovery (never includes raw source media blobs).",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the project owner."
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Stable UUID/identifier of the project."
+        },
+        "name": {
+          "type": "string",
+          "description": "Project title (1 to 80 characters)."
+        },
+        "aspectRatio": {
+          "type": "string",
+          "description": "Canvas aspect ratio preset (e.g. 16:9, 9:16, 1:1)."
+        },
+        "durationMicros": {
+          "type": "integer",
+          "description": "Canonical 64-bit microsecond timeline duration."
+        },
+        "frameRateNum": {
+          "type": "integer",
+          "description": "Rational frame rate numerator (25 to 240)."
+        },
+        "frameRateDen": {
+          "type": "integer",
+          "description": "Rational frame rate denominator (e.g. 1 or 1001)."
+        },
+        "trackCount": {
+          "type": "integer",
+          "description": "Number of timeline tracks."
+        },
+        "clipCount": {
+          "type": "integer",
+          "description": "Number of timeline clips."
+        },
+        "missingMediaCount": {
+          "type": "integer",
+          "description": "Count of unlinked/missing media items on last check."
+        },
+        "schemaVersion": {
+          "type": "integer",
+          "description": "Project metadata schema version."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last modification server timestamp via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "projectId",
+        "name",
+        "aspectRatio",
+        "durationMicros",
+        "frameRateNum",
+        "frameRateDen",
+        "trackCount",
+        "clipCount",
+        "missingMediaCount",
+        "schemaVersion",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Authenticated user profile document isolated per userId."
+    },
+    "/users/{userId}/projects/{projectId}": {
+      "schema": {
+        "$ref": "#/entities/CloudProjectMetadata"
+      },
+      "description": "Per-user synchronized project metadata subcollection (no raw source media)."
+    }
+  }
+}

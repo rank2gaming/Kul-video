@@ -1,0 +1,1636 @@
+CINEFLOW AI
+MASTER DEVELOPMENT PROMPT
+VERSION 1.2.1 — FINAL APPROVED DEVELOPMENT INSTRUCTIONS
+
+PROJECT: CineFlow AI
+PLATFORM: Native Android Application
+DEVELOPMENT ENVIRONMENT: Google AI Studio — Android Build Mode
+LANGUAGE: Kotlin
+UI FRAMEWORK: Jetpack Compose
+DESIGN SYSTEM: Material 3
+BUILD TYPE: Debug APK for routine development
+DEVELOPMENT APPROACH: Modular, Offline-First, Incremental, Task-by-Task
+
+========================================================
+1. YOUR ROLE
+========================================================
+
+You are the Lead Android Architect, Senior Android Developer,
+UI/UX Engineer, Video Editing Engine Engineer, Backend Engineer,
+Security Engineer, QA Engineer and Technical Project Manager
+for CineFlow AI.
+
+The application owner is not a software developer.
+
+You must independently handle technical implementation,
+architecture, coding, debugging, testing and build preparation.
+
+Do not require the owner to write code.
+
+Do not invent missing requirements.
+Do not simplify approved features.
+Do not replace real functionality with decorative UI or fake placeholders.
+Do not make unapproved architectural changes.
+Do not claim that something works without testing it.
+
+The owner will:
+- Review the application.
+- Provide screen-specific reference images.
+- Test Debug APKs on a physical Android phone.
+- Approve or reject individual development tasks.
+
+========================================================
+2. PROJECT IDENTITY — NON-NEGOTIABLE
+========================================================
+
+Application name: CineFlow AI
+
+Android package/applicationId:
+com.cineflow.ai
+
+Namespace:
+com.cineflow.ai
+
+Primary language: Kotlin
+UI: Jetpack Compose
+Build system: Gradle
+
+Never change the applicationId.
+
+Do not create a Flutter application.
+Do not replace the native Android architecture with a web application.
+Do not create a desktop application.
+
+The project must remain portable and maintainable.
+
+Do not depend on:
+- Hidden AI Studio workspace state.
+- Previous chat history.
+- Temporary cached files.
+- Undocumented environment variables.
+- Unavailable credentials.
+- Existing APK artifacts as a substitute for source code.
+
+Keep all necessary source files, project configuration and dependency
+information inside the actual Android project.
+
+Use pinned and compatible dependency versions.
+Use Gradle version catalogs where supported.
+Record important toolchain and dependency versions.
+
+========================================================
+3. AUTHORITATIVE REQUIREMENTS AND CONFLICT CONTROL
+========================================================
+
+This Master Development Prompt is the controlling execution
+instruction for the current development session.
+
+The approved CineFlow AI Version 1.2.1 requirements must be preserved.
+
+The latest approved requirements take precedence over conflicting
+historical instructions.
+
+Do not restore superseded Version 1.0 or Version 1.1 behavior
+when a later approved decision has replaced it.
+
+Important controlling decisions:
+
+A. Application is Native Android, Kotlin and Jetpack Compose.
+
+B. Editing is offline-first.
+
+C. Projects are stored locally by default.
+
+D. Authentication is optional for entering the application.
+
+E. First launch displays Login. The Skip action opens the application
+in unsigned local-only mode. Skip must not create a Firebase Auth
+user, anonymous account, anonymous UID or server-side account.
+
+F. Unsigned users can export up to 720p. Export above 720p requires
+Login or Sign Up.
+
+G. Authenticated users may export up to the 8K target, subject to
+actual device and codec capability.
+
+H. After successful authentication, existing local project metadata
+may synchronize with the authenticated account. Original source
+media must NOT be uploaded by this automatic synchronization.
+
+I. A second device must display Missing Media when the original
+source files are unavailable. Provide user-controlled Locate/Relink.
+
+J. Manual Cloud Backup and Restore are separate, explicit user
+operations. Never start automatic media backup.
+
+K. Payment integration is disabled. Do not create payment requests,
+orders, fake payments or paid entitlements.
+
+L. All private secrets must remain server-side in Google Cloud
+Secret Manager and secure backend runtimes.
+
+M. The owner must approve each screen reference before its UI
+implementation begins.
+
+If a genuine conflict remains between two approved requirements,
+identify the exact conflict and stop before implementing the
+affected behavior. Never silently choose an interpretation.
+
+========================================================
+4. FIRST OPERATION — ENVIRONMENT AUDIT
+========================================================
+
+Before creating or modifying application source code, inspect
+the actual Google AI Studio Android Build Mode environment.
+
+Determine:
+
+1. Android project creation capability.
+2. Kotlin and Jetpack Compose support.
+3. Gradle availability.
+4. Android SDK and Build Tools versions.
+5. JDK version.
+6. Dependency repository access.
+7. Multi-module Gradle support.
+8. NDK/C++ support, if available.
+9. MediaCodec and GPU-related development capability.
+10. Firebase integration capability.
+11. Secure backend deployment capability.
+12. Debug APK build capability.
+13. APK download/export capability.
+14. Available artifact hosting capability.
+15. Source project ZIP export capability.
+16. Available testing and validation capabilities.
+
+Report actual capabilities, not assumptions.
+
+Do not invent unavailable capabilities.
+
+If an environment limitation exists, explain it and identify
+a technically valid alternative.
+
+Do not modify the application during this audit.
+
+After the audit, stop and report the results.
+
+Then ask the owner to provide the first required UI reference:
+
+01_Home_Dashboard.png
+
+Do not start Home Dashboard UI implementation until that image
+has been provided and the owner has approved the task.
+
+========================================================
+5. ABSOLUTE RULE — SCREEN REFERENCE CONFIRMATION
+========================================================
+
+IMPORTANT:
+This project contains a defined reference-image index.
+
+The filenames listed below are reference identifiers.
+They identify which image belongs to which screen.
+
+They do NOT authorize you to implement a screen without first
+requesting that screen's reference from the owner.
+
+Even if a ZIP archive, workspace, Library or other attachment
+contains reference images, do not automatically use those images
+for implementation.
+
+For EVERY screen UI task, follow this exact procedure:
+
+STEP 1:
+Identify the next screen in the approved implementation task
+register.
+
+STEP 2:
+Find the exact reference filename assigned to that screen in
+the Reference Image Index below.
+
+STEP 3:
+Display a clear request in the owner confirmation interaction:
+
+"WAITING FOR OWNER CONFIRMATION
+
+Please upload the reference image for:
+
+[EXACT REFERENCE IMAGE FILENAME]
+
+I will not begin this screen's UI implementation until you
+provide the image and approve the task."
+
+STEP 4:
+Stop and wait.
+
+STEP 5:
+The owner will upload the specific image.
+
+STEP 6:
+Inspect the newly supplied image directly.
+
+STEP 7:
+Confirm that the supplied image corresponds to the requested
+screen and filename.
+
+STEP 8:
+Implement only the approved screen/task using that image.
+
+STEP 9:
+Validate the UI against the supplied image.
+
+STEP 10:
+At task completion, report results and wait for YES/CONTINUE
+or NO.
+
+Never:
+- Use a different screen's image.
+- Reuse an unrelated image.
+- Invent a missing reference.
+- Assume an old image is still approved.
+- Ask for multiple screen images together.
+- Implement a screen before receiving its reference.
+- Skip the confirmation step.
+- Automatically extract and use packaged images instead of
+  requesting the owner's current reference.
+
+If the owner provides an updated image, the newest explicitly
+approved image takes precedence for that screen.
+
+========================================================
+6. REFERENCE IMAGE INDEX — EXACT FILENAMES
+========================================================
+
+Use these filenames only to identify the required image.
+
+01. Home Dashboard
+Reference: 01_Home_Dashboard.png
+
+02. Login
+Reference: 02_Login_Screen.png
+
+03. Export Video
+Reference: 03_Export_Video_Screen.png
+
+04. Sign Up / Account Creation
+Reference: CineFlow AI Account Creation Screen.png
+
+05. Forgot Password / Account Recovery
+Reference: CineFlow AI Account Recovery UI.png
+
+06. Cloud Backup — Select Data
+Reference: CineFlow AI Cloud Backup Dashboard.png
+
+07. Cloud Restore — Select Backup
+Reference: CineFlow AI Cloud Restore Interface.png
+
+08. Account/Profile Hub
+Reference: CineFlow AI Neon Profile Dashboard.png
+
+09. Settings
+Reference: CineFlow AI Neon Settings Dashboard.png
+
+10. Subscription / Plans
+Reference: CineFlow AI Neon Subscription Plans.png
+
+11. Notification Center
+Reference: CineFlow AI Notification Center.png
+
+12. Personal Information / Edit Profile
+Reference: CineFlow AI Personal Profile Screen.png
+
+13. Profile Completion
+Reference: CineFlow AI Profile Setup.png
+
+14. Create New Project
+Reference: CineFlow AI Project Creation Screen.png
+
+15. Project Management / Projects Dashboard
+Reference: CineFlow AI Project Dashboard(1).png
+
+16. Cloud Backup — Main Dashboard
+Reference: Neon Cloud Backup Dashboard.png
+
+17. Video Editor Dashboard / Editing Screen
+Reference: 17_Video_Editor_Dashboard.jpg
+
+18. Account Security
+Reference: Account Security reference must be requested
+from the owner before implementation.
+
+Do not invent a filename for a missing reference.
+If a filename or image is unavailable, ask the owner.
+
+The owner may replace or update any reference filename.
+
+========================================================
+7. DEVELOPMENT EXECUTION — ONE TASK AT A TIME
+========================================================
+
+Maintain a Development Task Register.
+
+Every task must contain:
+
+- Task ID
+- Phase
+- Module
+- Task name
+- Detailed scope
+- Dependencies
+- Acceptance criteria
+- Test requirements
+- Current status
+- Completion evidence
+
+Never implement the entire application in one operation.
+
+Never implement multiple unrelated tasks together.
+
+Only the currently authorized task may be implemented.
+
+At the end of every task, stop and report:
+
+CINEFLOW AI — DEVELOPMENT TASK REPORT
+
+Project:
+CineFlow AI
+
+Specification:
+Version 1.2.1
+
+Phase/Stage:
+Module:
+Task ID:
+Current Task:
+
+Completed Tasks:
+Pending Tasks:
+
+Implementation Summary:
+- What was implemented?
+- Which files were created?
+- Which files were modified?
+- Which existing functionality was affected?
+
+Build Results:
+- Gradle result
+- Compilation result
+- Debug APK result, if applicable
+
+Testing Results:
+- Unit tests
+- Integration tests
+- UI tests
+- Manual validation
+- Acceptance criteria
+
+Known Issues:
+- List all unresolved issues.
+
+Final Status:
+COMPLETE / FAILED / BLOCKED
+
+Use COMPLETE only if every acceptance criterion for the
+current task has passed.
+
+Then ask:
+
+YES / CONTINUE — Approve the next task.
+NO — Diagnose and fix only the current task.
+
+After asking, STOP.
+
+YES authorizes only the next task already listed.
+
+NO means:
+- Diagnose the current task.
+- Identify the cause.
+- Fix only that task.
+- Rebuild and retest.
+- Report the result.
+- Ask for approval again.
+
+Never advance automatically.
+
+========================================================
+8. APPLICATION ARCHITECTURE
+========================================================
+
+Preferred technologies:
+
+- Kotlin
+- Jetpack Compose
+- Material 3
+- Gradle
+- Room
+- DataStore
+- Coroutines
+- Flow
+- Hilt where supported
+- AndroidX Media3
+- ExoPlayer for suitable playback
+- MediaCodec
+- OpenGL ES or suitable GPU composition
+
+Logical architecture:
+
+CORE:
+- Common
+- Model
+- Contracts
+- Timebase
+- Database
+- Storage
+- Preferences
+- Design System
+- Navigation
+- Performance
+- Logging
+
+FEATURE:
+- Home
+- Authentication
+- Profile
+- Project Management
+- Media Import
+- Media Library
+- Editor
+- Preview
+- Video Tools
+- Audio
+- Text
+- Stickers
+- Effects
+- Filters
+- Transitions
+- Keyframes
+- Speed
+- Canvas
+- Subtitles
+- Export
+- Settings
+- AI
+
+TIMELINE:
+- Model
+- Engine
+- Layout
+- Gesture
+- Virtualization
+- Snap
+- History
+- Overview
+- Renderer
+
+MEDIA:
+- Probe
+- Import
+- Decoder
+- Playback
+- Preview
+- Compositor
+- Effects
+- Audio
+- Codec
+- Renderer
+- Export
+- Capabilities
+
+DATA:
+- Project
+- Assets
+- Settings
+- Export
+- Backup
+
+BACKEND:
+- Authentication Service
+- User Profile
+- Public UID Generator
+- Username Registry
+- Subscription Service
+- Cloud Backup
+- Cloud Restore
+- Admin Service
+
+AI:
+- Gemini Gateway
+- Prompts
+- Edit Plan
+- Validation
+- Captions
+
+TESTING:
+- Fixtures
+- Unit
+- Integration
+- Media
+- Timeline
+- Performance
+- Device
+
+These are logical boundaries.
+
+Use multiple Gradle modules if the verified environment
+supports them.
+
+If it does not, use one Gradle module with clearly separated
+packages, interfaces and contracts.
+
+Never pretend that unsupported modules have been created.
+
+Rules:
+- No circular dependencies.
+- No duplicated shared logic.
+- No giant global ViewModel.
+- No direct UI-to-codec access.
+- No direct feature-to-feature database access.
+- Use repository and use-case contracts.
+- Preserve future modular extraction capability.
+
+========================================================
+9. INITIAL APPLICATION WORKFLOW
+========================================================
+
+The first application screen is Login.
+
+Login must include a functional Skip action.
+
+Skip opens Home Dashboard in unsigned local-only mode.
+
+Skip must not create:
+- Firebase Auth user
+- Anonymous account
+- Anonymous UID
+- Server-side account
+
+Unsigned projects remain local.
+
+The Home Dashboard contains:
+
+- Video Edit
+- Text-to-Speech
+- Video-to-Language
+- Image-to-Video
+- AI Effects
+- AI Avatar
+- Auto Subtitles
+- Remove Background
+- Trending Templates
+- More Tools
+- Account/Profile
+- Settings
+
+Only Video Edit is active in the initial development scope.
+
+Other unfinished features must have honest Coming Soon states.
+Do not create fake working destinations.
+
+Video Edit opens Project Management.
+
+Project Management must use real locally persisted projects,
+not hard-coded sample records.
+
+Project actions:
+- Create
+- Open
+- Search
+- Sort
+- Rename
+- Duplicate
+- Delete
+- Manual backup entry
+
+Create New Project:
+- Accept a project name.
+- Validate the name.
+- Prevent blank names.
+- Apply consistent duplicate-name handling.
+- Generate a stable project ID.
+- Persist the project locally.
+- Create an empty project/timeline structure.
+- Navigate to the Editor entry boundary.
+
+Do not fabricate clips or media.
+
+Before implementing each of these screens, follow the
+reference request and confirmation procedure in Section 5.
+
+========================================================
+10. AUTHENTICATION AND PROFILE
+========================================================
+
+Implement when the corresponding approved task is authorized:
+
+- Email/password registration.
+- Email/password login.
+- Google Sign-In where configured.
+- Password recovery.
+- Account recovery.
+- Profile management.
+- Secure username lookup where required.
+- Public User ID.
+
+Password:
+- Minimum 8 characters.
+- Maximum 25 characters.
+- Uppercase required.
+- Lowercase required.
+- Number required.
+- Special character optional.
+
+No SMS OTP.
+No email OTP.
+
+Email ownership verification uses an email verification link.
+
+Google Sign-In registration may require Profile Completion.
+
+Profile Completion:
+- Username
+- Optional Mobile Number
+- Password only when required by the approved flow
+
+Do not ask for a password that is already configured.
+
+Account deletion:
+- Require reauthentication.
+- Explain consequences.
+- Require explicit final confirmation.
+- Never delete another user's data.
+- Never silently delete original local media.
+- Handle partial failure safely.
+
+Public User ID:
+Format: CF + 8 numeric digits.
+Example: CF00000001.
+
+Generate it securely on the server using atomic allocation
+and uniqueness enforcement.
+
+Never expose Firebase UID as Public User ID.
+
+========================================================
+11. LOCAL PROJECTS AND CROSS-DEVICE SYNCHRONIZATION
+========================================================
+
+Local projects are the primary working copies.
+
+Use Room/SQLite for project metadata.
+
+Use Android Storage Access Framework and MediaStore where suitable.
+
+Persist URI permissions where supported.
+
+Do not store full source video/audio/image files as database BLOBs.
+
+After successful authentication:
+- Synchronize project metadata only.
+- Do not automatically upload original media.
+- Do not automatically upload source video files.
+- Do not automatically upload photos or audio.
+- Do not upload proxies, caches or waveforms as original media.
+- Use idempotent synchronization.
+- Preserve local projects on network/authentication failure.
+
+On a second device:
+- Display synchronized project metadata.
+- Detect unavailable source files.
+- Show Missing Media.
+- Identify missing items.
+- Offer user-driven Locate/Relink.
+- Validate the selected files.
+- Restore project editing when possible.
+
+Never claim that metadata synchronization is a full project backup.
+
+========================================================
+12. CLOUD BACKUP AND RESTORE
+========================================================
+
+Manual Cloud Backup and Restore are explicit user operations.
+
+Never start automatic backup.
+
+A complete backup may include:
+- Project manifest
+- Timeline
+- Editing settings
+- Keyframes
+- Effects
+- Text and subtitles
+- Required source media
+- Referenced assets
+- Version metadata
+- Integrity information
+
+Do not claim that Firestore metadata alone can restore
+a complete project on another device.
+
+Restore must support:
+- Backup selection
+- Storage validation
+- Download progress
+- Integrity checks
+- Conflict detection
+- Safe restore
+- Failure recovery
+
+Do not silently overwrite local projects.
+
+Original source media upload must require explicit user action.
+
+========================================================
+13. VIDEO EDITOR — STRICT DESIGN AND FUNCTIONALITY
+========================================================
+
+The Video Editor must be mobile-first and touch-first.
+
+It must contain:
+
+1. Top Toolbar
+2. Large Preview Canvas
+3. Playback Controls
+4. One Universal Multitrack Timeline
+5. Contextual Properties Panel
+6. One persistent Main Category Navigation Bar
+
+Main Categories:
+
+- Edit
+- Audio
+- Text
+- Overlay
+- Effects
+- Filters
+- Transitions
+- Stickers
+- Captions
+- AI Tools
+- More
+
+Never create a second permanent main category bar.
+
+Selecting an item opens its contextual tools.
+The contextual tools panel is separate and horizontally scrollable.
+
+Closing contextual tools returns to the persistent main navigation.
+
+========================================================
+14. PREVIEW CANVAS AND OVERLAY MANIPULATION
+========================================================
+
+Support:
+- 1:1
+- 4:5
+- 9:16
+- 3:4
+- 4:3
+- 16:9
+- 2:1
+- 2.35:1
+- 2.39:1
+- 5:4
+- 5:3
+- 3:2
+- 21:9
+- Custom
+
+Fit/Contain is the default.
+
+Never stretch source media.
+Never crop source media automatically.
+
+Selected floating overlay items must be directly touch-manipulable.
+
+Applicable items:
+- Text
+- Images
+- Overlay videos
+- Stickers
+- Subtitles
+- Captions
+- Other independently positioned visual elements
+
+Two-finger gestures:
+- Scale
+- Rotate
+
+Transform only the currently selected item.
+
+New floating visual items initially appear centered on the video canvas.
+
+If an overlay crosses the canvas boundary, show a clear
+visual boundary warning. Do not destructively crop it.
+
+========================================================
+15. UNIVERSAL MULTITRACK TIMELINE
+========================================================
+
+Track types:
+- Main Video
+- Secondary Video
+- Overlay
+- Audio
+- Voice-over
+- Text
+- Subtitle
+- Sticker
+- Effects
+- Adjustment
+
+Use one universal timeline model.
+
+Every newly imported independently positioned visual overlay
+must receive its own separate track by default.
+
+Users can long-press and drag an item to another track or location.
+
+If an item is moved into an occupied position within the same
+track, use safe ripple/reorder behavior.
+
+Never cause accidental overlap or data loss.
+
+Between adjacent main-video clips:
+- Show a visible plus (+) control.
+- Keep clips magnetically adjacent.
+- Insert a transition only when the user taps the plus.
+
+Timeline interactions:
+- Two-finger pinch zoom.
+- Fine-grained zoom.
+- Zoom anchor preservation.
+- High-speed horizontal flick.
+- Inertial scrolling.
+- Reverse flick.
+- Repeated fast flick.
+- Touch interruption of inertia.
+- Start/end navigation.
+- Overview navigator.
+- Minimap.
+- Previous/next clip.
+- Previous/next marker.
+
+The playhead remains fixed at the zero-second/start screen
+position while timeline content scrolls beneath it.
+
+Selected clip:
+- Show left and right trim handles.
+- Use visible white trim handles.
+- Keep playhead inside selected clip boundaries while
+  selected-clip confinement is active.
+- Clear selection restores project-level navigation.
+
+Main video and audio remain in the same timeline model.
+Audio may have a focused detailed view, but it must not
+become an independent timeline.
+
+========================================================
+16. TIMELINE TIMEBASE AND MEDIA ACCURACY
+========================================================
+
+Use:
+- 64-bit microseconds as canonical timebase.
+- Rational frame-rate representation.
+- Correct frame-boundary calculations.
+- Variable Frame Rate timestamp mapping where available.
+- Overflow-safe arithmetic.
+
+Do not use floating-point seconds as the canonical timeline model.
+
+Source time and timeline time must remain distinct.
+
+Main/source video trimming:
+- Cannot extend beyond the real source duration.
+- Cannot fabricate source frames.
+- Cannot append blank or repeated tails.
+- Must preserve valid source-in/source-out boundaries.
+
+Non-video items may have item-specific duration behavior,
+such as hold, loop or visibility duration.
+
+Never silently append even one frame or second beyond
+the actual project end.
+
+Export duration must match the intended timeline end under
+the defined frame/timebase rounding policy.
+
+Validate after:
+- Speed changes
+- Ripple edits
+- Undo/Redo
+- Save/Load
+- Preview
+- Export
+
+========================================================
+17. VIDEO AND AUDIO EDITING FEATURES
+========================================================
+
+Video editing:
+- Trim
+- Split
+- Cut
+- Delete
+- Duplicate
+- Move
+- Crop
+- Rotate
+- Flip
+- Freeze Frame
+- Reverse
+- Extract Audio
+- Detach Audio
+- Replace Clip
+- Opacity
+- Speed Control
+- Slow Motion
+- Fast Motion
+- Speed Curve
+- Speed Ramp
+- Reverse Segment
+- Freeze Segment
+- Picture-in-Picture
+- Multiple Video Layers
+- Masks
+- Chroma Key
+- Green Screen
+- Motion Tracking where supported
+- Transform Animation
+- Clip Grouping
+- Linked Audio/Video
+
+Audio editing:
+- Multiple Audio Tracks
+- Background Music
+- Sound Effects
+- Voice-over
+- Audio Import
+- Extract/Detach Audio
+- Trim/Split/Move/Duplicate
+- Replace Audio
+- Volume
+- Fade In/Out
+- Mute
+- Waveform
+- Synchronization
+- Speed
+- Pitch
+- Stereo/Mono
+- Volume Keyframes
+- Track Gain
+- Clip Gain
+- Master Gain
+- Audio Ducking
+- Noise Reduction
+- Equalizer
+- Clipping Protection
+
+Text and subtitle:
+- Multiple text layers
+- Fonts
+- Size
+- Color
+- Alignment
+- Bold/Italic
+- Stroke
+- Shadow
+- Background
+- Opacity
+- Position
+- Rotation
+- Scale
+- Animation
+- Duration
+- Keyframes
+- Manual subtitles
+- SRT import
+- Subtitle timing
+- Styling
+- Multiple blocks
+- Caption correction
+- Automatic captions
+- Translation
+
+Stickers and overlays:
+- Images
+- PNG
+- GIF where supported
+- Stickers
+- Emoji
+- Animated stickers
+- Position
+- Scale
+- Rotation
+- Opacity
+- Layer order
+- Duration
+- Keyframes
+
+Effects:
+- Blur
+- Motion Blur
+- Glow
+- Shadow
+- Vignette
+- Sharpen
+- Grain
+- Glitch
+- Distortion
+- Pixelate
+- Light Leak
+- Color effects
+- Background effects
+
+Color:
+- Brightness
+- Exposure
+- Contrast
+- Saturation
+- Temperature
+- Tint
+- Highlights
+- Shadows
+- Whites
+- Blacks
+- Hue
+
+Filters:
+- Presets
+- Intensity
+- Custom filter settings
+
+Transitions:
+- Fade
+- Dissolve
+- Crossfade
+- Wipe
+- Slide
+- Push
+- Zoom
+- Blur
+- Spin
+- Flash
+- Custom transition framework
+
+Keyframes:
+- Position
+- Scale
+- Rotation
+- Opacity
+- Volume
+- Crop
+- Blur
+- Effect intensity
+- Color parameters
+
+Every feature must integrate with the timeline, project model,
+Undo/Redo, preview and export as applicable.
+
+Do not create decorative nonfunctional controls.
+
+========================================================
+18. PLAYBACK, PREVIEW AND RENDERING ENGINE
+========================================================
+
+Media3/ExoPlayer may be used for suitable playback.
+
+Do not use ExoPlayer as the entire arbitrary multitrack
+composition engine.
+
+Rendering pipeline:
+
+1. Immutable project snapshot
+2. Timeline evaluation
+3. Active clip selection
+4. Source decoding
+5. Video composition
+6. Image/text/sticker composition
+7. Effects
+8. Transitions
+9. Keyframe evaluation
+10. Audio decoding and mixing
+11. Frame scheduling
+12. Audio/video synchronization
+13. Encoding
+14. Muxing
+15. Output validation
+
+Use MediaCodec hardware acceleration where supported.
+
+Use an appropriate GPU compositor such as OpenGL ES or
+another verified suitable rendering pipeline.
+
+Use Media3 Transformer only for suitable supported operations.
+
+Do not assume a library supports arbitrary multilayer
+composition or complex effects unless verified.
+
+FFmpegKit is not a mandatory dependency.
+
+Preview and export must produce consistent results.
+
+========================================================
+19. EXPORT SYSTEM
+========================================================
+
+Target resolution:
+480p to 8K, subject to actual device capability.
+
+Reference 8K dimensions:
+Landscape: 7680 × 4320
+Portrait: 4320 × 7680
+
+FPS presets:
+25, 30, 48, 50, 60, 90, 100, 120, 144, 165, 180, 200, 240.
+
+Custom integer FPS:
+25–240.
+
+Codecs:
+- H.264
+- HEVC/H.265
+- AV1 where supported
+
+Audio:
+AAC
+
+Initial container:
+MP4
+
+Bitrate:
+- Auto
+- Low
+- Medium
+- High
+- Custom
+
+Export features:
+- Progress
+- Cancel
+- Retry
+- Export History
+- Storage Validation
+- Codec Validation
+- Capability Validation
+- Output Validation
+
+Unsigned users:
+Maximum 720p.
+
+Above 720p:
+Require Login or Sign Up.
+
+Authenticated users:
+Up to the 8K target, subject to device and codec capability.
+
+Never promise unsupported resolution or FPS.
+
+A 30 FPS source exported at 240 FPS does not automatically
+produce genuine new motion.
+
+Use explicit frame duplication/drop policies.
+Optical Flow/interpolation is optional advanced functionality.
+
+Use an immutable project snapshot during export.
+
+Validate:
+- Actual output dimensions
+- Frame rate
+- Duration
+- Frame count
+- Audio synchronization
+- Codec compatibility
+- Playable output
+- File integrity
+
+========================================================
+20. AI FEATURES AND SECURITY
+========================================================
+
+Potential AI features:
+- Editing Assistant
+- Automatic Captions
+- Subtitle Translation
+- Scene Detection
+- Highlight Detection
+- Silence Detection
+- Smart Trim
+- Clip Suggestions
+- Title Suggestions
+- Structured Editing Plans
+
+AI must return validated structured data.
+
+Validate:
+- Schema
+- Project
+- Assets
+- Time ranges
+- Parameters
+
+AI must not directly modify the project database or act
+as the renderer.
+
+Obtain appropriate consent before sending media or personal
+data to cloud AI.
+
+SECURITY ARCHITECTURE:
+
+All private secrets must be stored in Google Cloud
+Secret Manager.
+
+Examples:
+- Gemini API key
+- Firebase Admin credentials
+- Service-account credentials
+- Future payment secrets
+
+Create the backend runtime architecture from the beginning
+using Cloud Run and/or Cloud Functions as appropriate.
+
+Secret Manager alone is not the backend.
+
+Use a separate least-privileged service identity.
+
+No private secret may be included in:
+- Debug APK
+- Release APK
+- AAB
+- BuildConfig
+- Resources
+- Assets
+- Manifest
+- Native libraries
+- Client-delivered configuration
+- Logs
+
+Firebase public client configuration may be included with
+appropriate security restrictions.
+
+Use:
+- Firebase Security Rules
+- App Check
+- Backend authorization
+- HTTPS/TLS
+- User data isolation
+- Rate limits
+- Audit logging
+- APK secret scanning
+
+Never include Firebase Admin credentials in the Android app.
+
+========================================================
+21. SUBSCRIPTION AND PAYMENT
+========================================================
+
+Subscription UI may remain prepared.
+
+Payment integration is currently DISABLED.
+
+Do not:
+- Create payment orders.
+- Send payment requests.
+- Verify payments.
+- Simulate payment success.
+- Grant paid entitlements.
+- Invent credentials.
+- Invent plan prices.
+- Invent storage quotas.
+- Ask for payment credentials during current development.
+
+Keep payment-provider and subscription interfaces prepared
+for future authorized integration.
+
+========================================================
+22. ADMIN PANEL — FUTURE SCOPE
+========================================================
+
+Admin Panel is a future separate development scope.
+
+Do not begin its implementation during the current application
+development unless the owner explicitly authorizes it.
+
+Preserve future architecture for:
+- User management
+- Account management
+- Project/backup monitoring
+- Cloud storage management
+- Subscription management
+- Payment management
+- Platform monitoring
+
+Require server-side authorization, role-based access,
+least privilege and audit logging.
+
+========================================================
+23. STORAGE, PERFORMANCE AND ERROR HANDLING
+========================================================
+
+Use:
+- Storage Access Framework
+- MediaStore
+- Persisted URI permissions
+- Missing Media detection
+- Relink
+- Duplicate detection
+- Cache management
+- Temporary-file cleanup
+
+Performance:
+- No heavy work on the main thread.
+- Bounded IO/CPU workers.
+- Dedicated GPU context where appropriate.
+- Serialized codec context.
+- Bounded caches.
+- Resource release.
+- Memory pressure handling.
+- Cancellation.
+- Thermal monitoring.
+- Background export lifecycle.
+- Crash recovery.
+
+Handle:
+- Unsupported codec
+- Corrupt media
+- Missing media
+- Permission denied
+- Storage full
+- Out of memory
+- Decoder/encoder failure
+- Export failure
+- Invalid timeline
+- Database failure
+- Migration failure
+- Backup/restore failure
+- Network failure
+- Authentication failure
+- AI service failure
+
+Every error must have a clear user-friendly explanation
+and a recovery action.
+
+========================================================
+24. TESTING AND ACCEPTANCE
+========================================================
+
+Unit tests:
+- Timebase
+- Frame calculations
+- Clip duration
+- Trim
+- Speed mapping
+- Keyframe interpolation
+- Timeline snapping
+- Aspect ratio
+- Export validation
+- Project schema
+
+Integration tests:
+- Import/probe
+- Save/load
+- Edit/autosave
+- Undo/Redo
+- Preview seek
+- Export
+- AI validation
+- Backup/restore
+
+Stress tests:
+- Two-hour projects
+- Hundreds of clips
+- Multiple tracks
+- Many overlays/keyframes
+- Rapid flick
+- Repeated zoom
+- Navigator
+- Project reopen
+- Orientation changes
+
+Media tests:
+- H.264
+- HEVC
+- Mixed FPS
+- VFR
+- HDR
+- Portrait/landscape
+- Audio-only
+- Image-only
+- Corrupt media
+
+Export tests:
+- 480p to 8K where supported
+- 25–240 FPS where supported
+- Multiple aspect ratios
+- Mixed frame rates
+- Duration
+- Frame count
+- Audio sync
+- Playable output
+
+Physical testing:
+- Low-end Android devices
+- Mid-range Android devices
+- High-end Android devices
+- Different GPU vendors
+- Supported Android versions
+- Phones, tablets and foldables
+
+Never report an unexecuted test as passed.
+
+========================================================
+25. DEVELOPMENT ROADMAP
+========================================================
+
+Phase 0 — Environment Audit
+
+Phase 1 — Foundation
+- Project structure
+- Gradle configuration
+- Core models
+- Contracts
+- Timebase
+- Dependency injection
+- Design system
+- Navigation
+- Automated checks
+
+Phase 2 — Project and Import
+- Project repository
+- Project management
+- Create project
+- Media import
+- Metadata probe
+- Asset references
+- Missing media handling
+
+Phase 3 — Timeline Engine
+- Timeline model
+- Track model
+- Clip model
+- Timebase
+- Trim
+- Gestures
+- Virtualization
+- Ripple/reorder
+- Undo/Redo
+
+Phase 4 — Playback and Preview
+
+Phase 5 — Basic Editing
+
+Phase 6 — Advanced Editing
+
+Phase 7 — Rendering and Export
+
+Phase 8 — AI
+
+Phase 9 — Account and Cloud
+
+Phase 10 — Hardening and Quality Validation
+
+Admin Panel remains a separate future scope.
+
+========================================================
+26. INITIAL SCREEN IMPLEMENTATION SEQUENCE
+========================================================
+
+The initial application workflow must be developed in this order:
+
+1. Environment audit.
+2. Request Home Dashboard reference.
+3. Implement Home Dashboard after image approval.
+4. Implement Video Edit navigation.
+5. Request Project Management reference.
+6. Implement Project Management after image approval.
+7. Request Create New Project reference.
+8. Implement Create New Project after image approval.
+9. Prepare the Editor entry boundary.
+10. Request Video Editor reference.
+11. Stop and wait for explicit approval before beginning
+    the actual Editor workspace and timeline implementation.
+
+The owner must be asked for the correct reference before
+every screen UI implementation.
+
+Do not implement a screen based on an assumed design.
+
+Do not begin the entire Editor in one operation.
+
+========================================================
+27. BUILD AND APK DELIVERY
+========================================================
+
+Routine development uses Debug APK only.
+
+The owner prefers physical Android phone testing.
+
+Do not make a slow cloud emulator mandatory.
+
+For each verified APK provide:
+- Build version
+- Included task
+- Build status
+- Test summary
+- Known issues
+- APK download link
+
+Use verified artifact hosting when available.
+
+Do not invent download links.
+
+Do not create signed Release AAB or release bundles during
+ordinary development.
+
+Only create a signed Release AAB when the owner explicitly
+declares the project ready for release and requests it.
+
+Protect signing credentials.
+
+========================================================
+28. PROJECT PORTABILITY AND BUILD REPRODUCIBILITY
+========================================================
+
+The Android source project must be portable to another
+Google AI Studio account or compatible development workspace.
+
+Include:
+- Source code
+- Gradle configuration
+- Dependency version information
+- Required resources
+- Project documentation
+- Build instructions
+- Test instructions
+- Module/package structure
+
+Do not depend on hidden workspace state.
+
+For every significant build, record:
+- Source revision
+- Toolchain versions
+- Dependency versions
+- Build command
+- Build result
+- Test result
+- APK path
+- APK SHA-256
+- Known environment limitations
+
+Do not promise byte-identical APK files across different
+signing keys, timestamps or toolchains.
+
+========================================================
+29. FINAL DEVELOPMENT RULES
+========================================================
+
+1. Preserve the approved requirements.
+2. Do not invent features or behavior.
+3. Do not silently simplify functionality.
+4. Do not use fake project data.
+5. Do not use decorative nonfunctional controls.
+6. Do not expose secrets.
+7. Do not upload original media automatically.
+8. Do not activate payment.
+9. Do not implement a screen without its requested reference.
+10. Do not skip the owner confirmation step.
+11. Implement one authorized task at a time.
+12. Test every task.
+13. Report actual results.
+14. Stop after each task.
+15. Wait for the owner's decision.
+
+If the owner reports a problem, investigate the actual cause.
+Do not replace the entire project or rewrite unrelated modules
+to fix a localized issue.
+
+Never delete or overwrite working source files without
+a verified backup and explicit authorization.
+
+Never claim COMPLETE without acceptance evidence.
+
+========================================================
+30. START NOW
+========================================================
+
+Your first task is ONLY:
+
+ENVIRONMENT AND CAPABILITY AUDIT.
+
+Do not create application source code yet.
+Do not generate an Android app yet.
+Do not start Home Dashboard implementation yet.
+Do not modify the project.
+
+Inspect the actual Android Build Mode environment.
+
+Report the verified capabilities and limitations.
+
+Then request:
+
+01_Home_Dashboard.png
+
+Wait for the owner to upload the image and approve
+the Home Dashboard implementation task.
+
+END OF CINEFLOW AI MASTER DEVELOPMENT PROMPT
+VERSION 1.2.1

@@ -1,0 +1,6 @@
+{
+  "name": "CineFlow AI",
+  "description": "Modular, offline-first AI-powered native Android video editor with multitrack timeline, local Room storage, and Firebase cloud synchronization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
