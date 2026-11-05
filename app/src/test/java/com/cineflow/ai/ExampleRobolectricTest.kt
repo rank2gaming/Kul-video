@@ -433,6 +433,60 @@ class ExampleRobolectricTest {
     assertEquals(240, completed8k.record.fps)
     assertNotNull(completed8k.record.frameRatePolicyNote)
   }
+
+  @Test
+  fun loginScreen_displaysReferenceUiValidatesSection10PasswordAndSupportsSkipLocalMode() {
+    val loginViewModel = com.cineflow.ai.feature.auth.LoginViewModel()
+    var skippedToHome = false
+    var loggedInSuccess = false
+
+    composeTestRule.setContent {
+      CineFlowTheme {
+        com.cineflow.ai.feature.auth.LoginScreen(
+          viewModel = loginViewModel,
+          onLoginSuccess = { loggedInSuccess = true },
+          onSkipToHome = { skippedToHome = true }
+        )
+      }
+    }
+
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("login_screen").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("login_hero_banner").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("login_skip_button").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("login_card_container").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("login_title_text").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Sign in to continue to CineFlow AI").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("login_email_input").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("login_password_input").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("login_password_visibility_toggle").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("login_forgot_password_button").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("login_submit_button").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("login_google_button").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("login_apple_button").performScrollTo().assertIsDisplayed()
+
+    // Section 3.E & 9: Skip opens Home Dashboard in unsigned local-only mode without creating any user
+    composeTestRule.onNodeWithTag("login_skip_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(skippedToHome)
+    assertFalse(loginViewModel.isLocalSessionAuthenticated.value)
+
+    // Section 10: Invalid password (<8 chars, missing uppercase/digit) is rejected
+    loginViewModel.onEmailChange("creator@cineflow.ai")
+    loginViewModel.onPasswordChange("short")
+    assertFalse(loginViewModel.submitLogin())
+    assertNotNull(loginViewModel.errorMessage.value)
+
+    loginViewModel.onPasswordChange("alllowercase123")
+    assertFalse(loginViewModel.submitLogin())
+    assertNotNull(loginViewModel.errorMessage.value)
+
+    // Valid Section 10 password (8..25 chars, uppercase, lowercase, number) succeeds
+    loginViewModel.onPasswordChange("CineFlow2026")
+    assertTrue(loginViewModel.submitLogin(onSuccess = { loggedInSuccess = true }))
+    assertTrue(loggedInSuccess)
+    assertTrue(loginViewModel.isLocalSessionAuthenticated.value)
+  }
 }
 
 

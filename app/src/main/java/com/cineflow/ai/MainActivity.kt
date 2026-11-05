@@ -19,6 +19,9 @@ import com.cineflow.ai.core.firebase.configureAppCheck
 import com.cineflow.ai.core.model.VideoProject
 import com.cineflow.ai.data.cloud.CloudProjectSyncRepository
 import com.cineflow.ai.data.project.LocalProjectRepository
+import com.cineflow.ai.feature.auth.LoginScreen
+import com.cineflow.ai.feature.auth.LoginViewModel
+import com.cineflow.ai.feature.auth.ROUTE_LOGIN
 import com.cineflow.ai.feature.editor.VideoEditorScreen
 import com.cineflow.ai.feature.editor.VideoEditorViewModel
 import com.cineflow.ai.feature.export.ExportVideoScreen
@@ -63,6 +66,7 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
   val localProjectRepository = remember(database) {
     LocalProjectRepository(database.localProjectDao())
   }
+  val loginViewModel: LoginViewModel = viewModel()
   val homeViewModel: HomeDashboardViewModel = viewModel(
     factory = HomeDashboardViewModel.provideFactory(localProjectRepository)
   )
@@ -72,9 +76,14 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
 
   val currentUser by auth.authStateFlow()
     .collectAsStateWithLifecycle(initialValue = auth.currentUser)
+  val isLocalSessionAuthenticated by loginViewModel.isLocalSessionAuthenticated
+    .collectAsStateWithLifecycle()
   val localProjects by homeViewModel.localProjects.collectAsStateWithLifecycle()
 
-  var currentRoute by remember { mutableStateOf(ROUTE_HOME_DASHBOARD) }
+  // Section 9: The first application screen is Login (when unsigned); Skip opens Home Dashboard in unsigned local-only mode.
+  var currentRoute by remember {
+    mutableStateOf(if (auth.currentUser != null) ROUTE_HOME_DASHBOARD else ROUTE_LOGIN)
+  }
   var activeEditorProject by remember { mutableStateOf<VideoProject?>(null) }
   var publicUid by remember { mutableStateOf<String?>(null) }
 
@@ -85,6 +94,8 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
   // Auth-gated Cloud Metadata Synchronization:
   // Only instantiated and executed when currentUser != null (Section 3.H & 11).
   val signedInUser = currentUser
+  val isEffectiveSignedIn = (signedInUser != null) || isLocalSessionAuthenticated
+
   LaunchedEffect(signedInUser?.uid, localProjects.size) {
     if (signedInUser != null) {
       val cloudRepo = CloudProjectSyncRepository(context.applicationContext)
@@ -110,11 +121,24 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
   }
 
   when (currentRoute) {
+    ROUTE_LOGIN -> {
+      LoginScreen(
+        viewModel = loginViewModel,
+        onLoginSuccess = {
+          currentRoute = ROUTE_HOME_DASHBOARD
+        },
+        onSkipToHome = {
+          // Section 3.E & 9: Skip opens Home Dashboard in unsigned local-only mode without creating any Firebase user.
+          currentRoute = ROUTE_HOME_DASHBOARD
+        }
+      )
+    }
+
     ROUTE_HOME_DASHBOARD -> {
       HomeDashboardScreen(
         viewModel = homeViewModel,
-        isSignedIn = signedInUser != null,
-        currentUserEmail = signedInUser?.email,
+        isSignedIn = isEffectiveSignedIn,
+        currentUserEmail = signedInUser?.email ?: loginViewModel.email.value.takeIf { isLocalSessionAuthenticated },
         publicUid = publicUid,
         onNavigateToVideoEdit = { currentRoute = ROUTE_PROJECT_MANAGEMENT },
         onAuthChanged = { /* AuthStateListener Flow updates currentUser reactively */ }
@@ -124,7 +148,7 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
     ROUTE_PROJECT_MANAGEMENT -> {
       ProjectManagementScreen(
         viewModel = projectManagementViewModel,
-        isSignedIn = signedInUser != null,
+        isSignedIn = isEffectiveSignedIn,
         onBackToHome = { currentRoute = ROUTE_HOME_DASHBOARD },
         onOpenProjectInEditor = { project ->
           activeEditorProject = project
@@ -163,7 +187,7 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
         }
         VideoEditorScreen(
           viewModel = editorViewModel,
-          isSignedIn = signedInUser != null,
+          isSignedIn = isEffectiveSignedIn,
           onBackToProjects = {
             activeEditorProject = null
             currentRoute = ROUTE_PROJECT_MANAGEMENT
@@ -186,7 +210,7 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
         }
         ExportVideoScreen(
           viewModel = exportViewModel,
-          isSignedIn = signedInUser != null,
+          isSignedIn = isEffectiveSignedIn,
           onBackToEditor = {
             activeEditorProject = exportViewModel.project.value
             currentRoute = ROUTE_EDITOR_BOUNDARY
