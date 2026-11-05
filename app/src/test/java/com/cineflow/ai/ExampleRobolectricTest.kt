@@ -487,6 +487,69 @@ class ExampleRobolectricTest {
     assertTrue(loggedInSuccess)
     assertTrue(loginViewModel.isLocalSessionAuthenticated.value)
   }
+
+  @Test
+  fun signUpScreen_displaysReferenceUiValidatesSection10RulesAndAllocatesPublicUid() {
+    val signUpViewModel = com.cineflow.ai.feature.auth.SignUpViewModel()
+    var navigatedBackToLogin = false
+    var allocatedPublicUid: String? = null
+
+    composeTestRule.setContent {
+      CineFlowTheme {
+        com.cineflow.ai.feature.auth.SignUpScreen(
+          viewModel = signUpViewModel,
+          onBackToLogin = { navigatedBackToLogin = true },
+          onSignUpSuccess = { uid -> allocatedPublicUid = uid }
+        )
+      }
+    }
+
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("signup_screen").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("signup_top_hero").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("signup_back_button").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("signup_card_container").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("signup_full_name_input").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("signup_username_input").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("signup_email_input").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("signup_country_code_selector").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("signup_mobile_input").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("signup_password_input").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("signup_password_visibility_toggle").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("signup_confirm_password_input").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("signup_confirm_password_visibility_toggle").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("signup_password_requirements_box").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("signup_submit_button").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("signup_google_button").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("signup_navigate_to_login_button").performScrollTo().assertIsDisplayed()
+
+    // Default country code is +91
+    assertEquals("+91", signUpViewModel.countryCode.value)
+
+    // Mismatched confirm password fails validation
+    signUpViewModel.onFullNameChange("Rabiul Islam")
+    signUpViewModel.onUsernameChange("rabiul_creator")
+    signUpViewModel.onEmailChange("rabiul@cineflow.ai")
+    signUpViewModel.onPasswordChange("CineFlow2026")
+    signUpViewModel.onConfirmPasswordChange("Different2026")
+    assertFalse(signUpViewModel.submitSignUp())
+    assertNotNull(signUpViewModel.errorMessage.value)
+
+    // Matching valid password succeeds and allocates CF + 8 numeric digits Public User ID
+    signUpViewModel.onConfirmPasswordChange("CineFlow2026")
+    assertTrue(signUpViewModel.submitSignUp { uid -> allocatedPublicUid = uid })
+    assertNotNull(allocatedPublicUid)
+    assertTrue(Regex("^CF\\d{8}$").matches(allocatedPublicUid!!))
+
+    // Duplicate username is rejected on subsequent attempt
+    assertFalse(signUpViewModel.submitSignUp())
+    assertNotNull(signUpViewModel.errorMessage.value)
+
+    // Navigating back to Login works
+    composeTestRule.onNodeWithTag("signup_navigate_to_login_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(navigatedBackToLogin)
+  }
 }
 
 

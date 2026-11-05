@@ -113,6 +113,7 @@ fun LoginScreen(
   viewModel: LoginViewModel,
   onLoginSuccess: () -> Unit,
   onSkipToHome: () -> Unit,
+  onNavigateToSignUp: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
@@ -510,6 +511,32 @@ fun LoginScreen(
               maxLines = 1
             )
           }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.Center,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Text(
+            text = "Don't have an account? ",
+            color = LoginTextMuted,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium
+          )
+          Text(
+            text = "Sign Up",
+            color = LoginPurpleAccent,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.ExtraBold,
+            modifier = Modifier
+              .clip(RoundedCornerShape(6.dp))
+              .clickable(onClick = onNavigateToSignUp)
+              .padding(horizontal = 4.dp, vertical = 2.dp)
+              .testTag("login_navigate_to_signup_button")
+          )
         }
       }
 

@@ -22,6 +22,9 @@ import com.cineflow.ai.data.project.LocalProjectRepository
 import com.cineflow.ai.feature.auth.LoginScreen
 import com.cineflow.ai.feature.auth.LoginViewModel
 import com.cineflow.ai.feature.auth.ROUTE_LOGIN
+import com.cineflow.ai.feature.auth.ROUTE_SIGN_UP
+import com.cineflow.ai.feature.auth.SignUpScreen
+import com.cineflow.ai.feature.auth.SignUpViewModel
 import com.cineflow.ai.feature.editor.VideoEditorScreen
 import com.cineflow.ai.feature.editor.VideoEditorViewModel
 import com.cineflow.ai.feature.export.ExportVideoScreen
@@ -67,6 +70,7 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
     LocalProjectRepository(database.localProjectDao())
   }
   val loginViewModel: LoginViewModel = viewModel()
+  val signUpViewModel: SignUpViewModel = viewModel()
   val homeViewModel: HomeDashboardViewModel = viewModel(
     factory = HomeDashboardViewModel.provideFactory(localProjectRepository)
   )
@@ -77,6 +81,8 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
   val currentUser by auth.authStateFlow()
     .collectAsStateWithLifecycle(initialValue = auth.currentUser)
   val isLocalSessionAuthenticated by loginViewModel.isLocalSessionAuthenticated
+    .collectAsStateWithLifecycle()
+  val createdPublicUid by signUpViewModel.createdPublicUid
     .collectAsStateWithLifecycle()
   val localProjects by homeViewModel.localProjects.collectAsStateWithLifecycle()
 
@@ -94,7 +100,7 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
   // Auth-gated Cloud Metadata Synchronization:
   // Only instantiated and executed when currentUser != null (Section 3.H & 11).
   val signedInUser = currentUser
-  val isEffectiveSignedIn = (signedInUser != null) || isLocalSessionAuthenticated
+  val isEffectiveSignedIn = (signedInUser != null) || isLocalSessionAuthenticated || (createdPublicUid != null)
 
   LaunchedEffect(signedInUser?.uid, localProjects.size) {
     if (signedInUser != null) {
@@ -115,6 +121,8 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
       localProjects.forEach { project ->
         cloudRepo.syncProjectMetadata(project)
       }
+    } else if (createdPublicUid != null) {
+      publicUid = createdPublicUid
     } else {
       publicUid = null
     }
@@ -130,6 +138,24 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
         onSkipToHome = {
           // Section 3.E & 9: Skip opens Home Dashboard in unsigned local-only mode without creating any Firebase user.
           currentRoute = ROUTE_HOME_DASHBOARD
+        },
+        onNavigateToSignUp = {
+          currentRoute = ROUTE_SIGN_UP
+        }
+      )
+    }
+
+    ROUTE_SIGN_UP -> {
+      SignUpScreen(
+        viewModel = signUpViewModel,
+        onBackToLogin = {
+          currentRoute = ROUTE_LOGIN
+        },
+        onSignUpSuccess = { allocatedPublicUid ->
+          if (allocatedPublicUid != null) {
+            publicUid = allocatedPublicUid
+          }
+          currentRoute = ROUTE_HOME_DASHBOARD
         }
       )
     }
@@ -138,7 +164,9 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
       HomeDashboardScreen(
         viewModel = homeViewModel,
         isSignedIn = isEffectiveSignedIn,
-        currentUserEmail = signedInUser?.email ?: loginViewModel.email.value.takeIf { isLocalSessionAuthenticated },
+        currentUserEmail = signedInUser?.email
+          ?: signUpViewModel.email.value.takeIf { createdPublicUid != null }
+          ?: loginViewModel.email.value.takeIf { isLocalSessionAuthenticated },
         publicUid = publicUid,
         onNavigateToVideoEdit = { currentRoute = ROUTE_PROJECT_MANAGEMENT },
         onAuthChanged = { /* AuthStateListener Flow updates currentUser reactively */ }
