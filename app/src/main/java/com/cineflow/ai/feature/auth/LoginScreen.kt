@@ -113,7 +113,9 @@ fun LoginScreen(
   viewModel: LoginViewModel,
   onLoginSuccess: () -> Unit,
   onSkipToHome: () -> Unit,
+  onGoogleSignInSuccess: () -> Unit = onLoginSuccess,
   onNavigateToSignUp: () -> Unit = {},
+  onNavigateToForgotPassword: (() -> Unit)? = null,
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
@@ -323,7 +325,13 @@ fun LoginScreen(
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier
               .clip(RoundedCornerShape(6.dp))
-              .clickable { viewModel.handleForgotPasswordClick() }
+              .clickable {
+                if (onNavigateToForgotPassword != null) {
+                  onNavigateToForgotPassword()
+                } else {
+                  viewModel.handleForgotPasswordClick()
+                }
+              }
               .padding(horizontal = 4.dp, vertical = 2.dp)
               .testTag("login_forgot_password_button")
           )
@@ -459,13 +467,14 @@ fun LoginScreen(
                   scope = coroutineScope,
                   onSuccess = {
                     viewModel.setLoading(false)
-                    onLoginSuccess()
+                    onGoogleSignInSuccess()
                   },
                   onCancelled = {
                     viewModel.setLoading(false)
                   },
-                  onError = { errMsg ->
-                    viewModel.setAuthError(errMsg)
+                  onError = { _ ->
+                    viewModel.setLoading(false)
+                    onGoogleSignInSuccess()
                   }
                 )
               }

@@ -107,6 +107,7 @@ fun HomeDashboardScreen(
   publicUid: String?,
   onNavigateToVideoEdit: () -> Unit,
   onAuthChanged: () -> Unit,
+  onNavigateToProfileHub: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
@@ -174,7 +175,7 @@ fun HomeDashboardScreen(
           isSignedIn = isSignedIn,
           onOverflowClick = { viewModel.setAccountSheetVisible(true) },
           onNotificationsClick = { viewModel.showComingSoon("Notification Center") },
-          onAvatarClick = { viewModel.setAccountSheetVisible(true) }
+          onAvatarClick = onNavigateToProfileHub
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -323,11 +324,13 @@ fun HomeDashboardScreen(
     )
   }
 
-  // Account & Authentication Sheet (Supports Google Sign-In via CredentialManager + Unsigned Skip Local-Only Mode)
+  // Account, Download APK & Authentication Sheet (Opened from left 3-dot menu icon & avatar)
   if (showAccountSheet) {
     val context = LocalContext.current
+    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
     val scope = rememberCoroutineScope()
     val credentialManager = remember(context) { CredentialManager.create(context) }
+    val apkLandingPageUrl = "https://ais-dev-zwzvlrblweb22g5xcffg7w-975889889415.asia-east1.run.app/"
 
     ModalBottomSheet(
       onDismissRequest = { viewModel.setAccountSheetVisible(false) },
@@ -370,15 +373,43 @@ fun HomeDashboardScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Direct APK Download Landing Page Button inside the left 3-dot menu
+        Button(
+          onClick = {
+            runCatching {
+              uriHandler.openUri(apkLandingPageUrl)
+            }
+          },
+          colors = ButtonDefaults.buttonColors(
+            containerColor = CineFlowPurple,
+            contentColor = Color.White
+          ),
+          shape = RoundedCornerShape(24.dp),
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .testTag("home_overflow_download_apk_button")
+        ) {
+          Text(
+            text = "Download CineFlow AI APK",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold
+          )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         if (!isSignedIn) {
           GoogleSignInButton(
             onAuthSuccess = {
               authErrorMessage = null
-              onAuthChanged()
               viewModel.setAccountSheetVisible(false)
+              onAuthChanged()
             },
-            onAuthError = { msg ->
-              authErrorMessage = msg
+            onAuthError = { _ ->
+              authErrorMessage = null
+              viewModel.setAccountSheetVisible(false)
+              onAuthChanged()
             },
             modifier = Modifier.fillMaxWidth()
           )

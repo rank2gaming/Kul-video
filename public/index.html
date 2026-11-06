@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CineFlow AI — Official Android APK Download</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, #1f1454 0%, #09071a 70%);
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .card {
+      max-width: 500px;
+      width: 100%;
+      background: rgba(16, 19, 46, 0.96);
+      border: 1.5px solid #6d58ff;
+      border-radius: 24px;
+      padding: 32px 24px;
+      text-align: center;
+      box-shadow: 0 16px 48px rgba(131, 56, 255, 0.35);
+    }
+    .badge {
+      display: inline-block;
+      padding: 5px 14px;
+      border-radius: 999px;
+      background: rgba(109, 88, 255, 0.22);
+      border: 1px solid #8338ff;
+      color: #05d8ff;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: 0.4px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 28px;
+      font-weight: 800;
+    }
+    .subtitle {
+      margin: 0 0 22px;
+      color: #b5b9d8;
+      font-size: 14px;
+    }
+    .meta {
+      background: #171b3d;
+      border: 1px solid #535b8e;
+      border-radius: 14px;
+      padding: 15px;
+      text-align: left;
+      font-size: 13px;
+      line-height: 1.68;
+      color: #d6daee;
+      margin-bottom: 22px;
+      word-break: break-all;
+    }
+    .progress-wrap {
+      display: none;
+      margin-bottom: 18px;
+      text-align: left;
+    }
+    .progress-bar-bg {
+      width: 100%;
+      height: 12px;
+      background: #171b3d;
+      border: 1px solid #535b8e;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #c83bff 0%, #6d58ff 50%, #05d8ff 100%);
+      transition: width 0.15s ease;
+    }
+    .status-text {
+      font-size: 13px;
+      color: #47e5bc;
+      font-weight: 600;
+      text-align: center;
+    }
+    .btn {
+      display: inline-block;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 16px 20px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(90deg, #c83bff 0%, #6d58ff 50%, #05d8ff 100%);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 16px;
+      text-decoration: none;
+      box-shadow: 0 6px 20px rgba(109, 88, 255, 0.45);
+    }
+    .btn:disabled {
+      opacity: 0.65;
+      cursor: wait;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">OFFICIAL ANDROID DEBUG BUILD</div>
+    <h1>CineFlow AI</h1>
+    <p class="subtitle">AI Powered Video Editor — Landing Page &amp; APK Download</p>
+    <div class="meta">
+      <strong>Application Name:</strong> CineFlow AI<br />
+      <strong>Package ID:</strong> com.cineflow.ai<br />
+      <strong>File Name:</strong> CineFlow-AI-debug.apk<br />
+      <strong>Size:</strong> <span id="apkSizeLabel">~33 MB</span><br />
+      <strong>SHA-256:</strong> <span id="apkShaLabel">Verified Debug Build</span>
+    </div>
+
+    <div id="progressWrap" class="progress-wrap">
+      <div class="progress-bar-bg">
+        <div id="progressFill" class="progress-bar-fill"></div>
+      </div>
+      <div id="statusText" class="status-text">Preparing download...</div>
+    </div>
+
+    <button id="downloadBtn" class="btn" onclick="startChunkedDownload()">
+      ⬇ Download CineFlow-AI-debug.apk
+    </button>
+  </div>
+
+  <script>
+    let isDownloading = false;
+
+    // Load live APK size and SHA-256 on landing page load (without auto-triggering download)
+    window.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const res = await fetch('/api/apk-info', { cache: 'no-store' });
+        if (res.ok) {
+          const info = await res.json();
+          const mb = (info.size / 1048576).toFixed(2);
+          document.getElementById('apkSizeLabel').textContent = `${info.size.toLocaleString()} bytes (${mb} MB)`;
+          if (info.sha256) {
+            document.getElementById('apkShaLabel').textContent = info.sha256;
+          }
+          document.getElementById('downloadBtn').textContent = `⬇ Download CineFlow-AI-debug.apk (${mb} MB)`;
+        }
+      } catch (_) {}
+    });
+
+    async function startChunkedDownload() {
+      if (isDownloading) return;
+      isDownloading = true;
+
+      const btn = document.getElementById('downloadBtn');
+      const wrap = document.getElementById('progressWrap');
+      const fill = document.getElementById('progressFill');
+      const status = document.getElementById('statusText');
+
+      btn.disabled = true;
+      btn.textContent = 'Downloading APK...';
+      wrap.style.display = 'block';
+      fill.style.width = '0%';
+      status.style.color = '#47e5bc';
+      status.textContent = 'Fetching APK metadata...';
+
+      try {
+        const infoRes = await fetch('/api/apk-info', { cache: 'no-store' });
+        if (!infoRes.ok) throw new Error('Failed to fetch APK info');
+        const info = await infoRes.json();
+
+        const totalSize = info.size;
+        const chunkSize = 4 * 1024 * 1024; // 4 MB per chunk
+        const chunks = [];
+        let downloaded = 0;
+        const totalChunks = Math.ceil(totalSize / chunkSize);
+
+        for (let i = 0; i < totalChunks; i++) {
+          const start = i * chunkSize;
+          const end = Math.min(totalSize - 1, start + chunkSize - 1);
+          status.textContent = `Downloading part ${i + 1} of ${totalChunks} (${(downloaded / 1048576).toFixed(1)} / ${(totalSize / 1048576).toFixed(1)} MB)...`;
+
+          const chunkRes = await fetch(`/api/apk-chunk?start=${start}&end=${end}`, {
+            cache: 'no-store'
+          });
+          if (!chunkRes.ok) {
+            throw new Error(`Part ${i + 1} failed with HTTP ${chunkRes.status}`);
+          }
+          const buf = await chunkRes.arrayBuffer();
+          chunks.push(buf);
+          downloaded += buf.byteLength;
+
+          const pct = Math.min(100, Math.round((downloaded / totalSize) * 100));
+          fill.style.width = pct + '%';
+        }
+
+        status.textContent = 'Saving CineFlow-AI-debug.apk (100%)...';
+        const apkBlob = new Blob(chunks, { type: 'application/vnd.android.package-archive' });
+        const blobUrl = URL.createObjectURL(apkBlob);
+
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = info.filename || 'CineFlow-AI-debug.apk';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+
+        status.textContent = 'Download complete! Check your browser downloads for CineFlow-AI-debug.apk.';
+        btn.disabled = false;
+        btn.textContent = '⬇ Download CineFlow-AI-debug.apk Again';
+      } catch (err) {
+        status.style.color = '#ff6b7a';
+        status.textContent = 'Error: ' + err.message + '. Click button to retry.';
+        btn.disabled = false;
+        btn.textContent = 'Retry Download';
+      } finally {
+        isDownloading = false;
+      }
+    }
+  </script>
+</body>
+</html>

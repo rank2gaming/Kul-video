@@ -149,6 +149,13 @@ class ExampleRobolectricTest {
     composeTestRule.onNodeWithTag("coming_soon_dismiss_button").performClick()
     composeTestRule.waitForIdle()
 
+    // Clicking the left 3-dot menu icon opens the sheet with the Download CineFlow AI APK button
+    composeTestRule.onNodeWithTag("home_overflow_menu_button").performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("home_overflow_download_apk_button").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("auth_skip_button").performClick()
+    composeTestRule.waitForIdle()
+
     // Clicking Video Edit triggers navigation to Project Management
     composeTestRule.onNodeWithTag("tool_card_video_edit").performClick()
     composeTestRule.waitForIdle()
@@ -550,6 +557,546 @@ class ExampleRobolectricTest {
     composeTestRule.waitForIdle()
     assertTrue(navigatedBackToLogin)
   }
+
+  @Test
+  fun accountRecoveryScreen_displaysReferenceUiSwitchesTabsAndValidatesRecoveryInput() {
+    val recoveryViewModel = com.cineflow.ai.feature.auth.AccountRecoveryViewModel()
+    var navigatedBack = false
+
+    composeTestRule.setContent {
+      CineFlowTheme {
+        com.cineflow.ai.feature.auth.AccountRecoveryScreen(
+          viewModel = recoveryViewModel,
+          onBackToLogin = { navigatedBack = true }
+        )
+      }
+    }
+
+    composeTestRule.waitForIdle()
+
+    // Verify top hero and 3-tab selector
+    composeTestRule.onNodeWithTag("recovery_top_hero").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("recovery_back_button").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("recovery_tab_bar").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("recovery_tab_forgot_password").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("recovery_tab_forgot_username").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("recovery_tab_forgot_email").performScrollTo().assertIsDisplayed()
+
+    // Verify main card elements and bottom Need Help support card
+    composeTestRule.onNodeWithTag("recovery_main_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("recovery_card_title").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("recovery_identifier_input").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("recovery_primary_submit_button").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("recovery_link_card_button").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("recovery_support_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("recovery_contact_support_button").performScrollTo().assertIsDisplayed()
+
+    // Default tab is FORGOT_PASSWORD
+    assertEquals(
+      com.cineflow.ai.feature.auth.AccountRecoveryTab.FORGOT_PASSWORD,
+      recoveryViewModel.selectedTab.value
+    )
+
+    // Empty identifier fails validation
+    assertFalse(recoveryViewModel.submitPrimaryRecovery())
+    assertNotNull(recoveryViewModel.errorMessage.value)
+
+    // Switch to Forgot Username tab
+    composeTestRule.onNodeWithTag("recovery_tab_forgot_username").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertEquals(
+      com.cineflow.ai.feature.auth.AccountRecoveryTab.FORGOT_USERNAME,
+      recoveryViewModel.selectedTab.value
+    )
+
+    // Switch to Forgot Email tab
+    composeTestRule.onNodeWithTag("recovery_tab_forgot_email").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertEquals(
+      com.cineflow.ai.feature.auth.AccountRecoveryTab.FORGOT_EMAIL,
+      recoveryViewModel.selectedTab.value
+    )
+
+    // Switch back to Forgot Password tab and test valid email
+    composeTestRule.onNodeWithTag("recovery_tab_forgot_password").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    recoveryViewModel.onIdentifierChange("creator@cineflow.ai")
+    assertTrue(recoveryViewModel.submitPrimaryRecovery())
+    assertNotNull(recoveryViewModel.recoveryStatusMessage.value)
+
+    // Test Use a Recovery Link button
+    assertTrue(recoveryViewModel.submitOneTimeRecoveryLink())
+    assertNotNull(recoveryViewModel.recoveryStatusMessage.value)
+
+    // Test Contact Support dialog
+    composeTestRule.onNodeWithTag("recovery_contact_support_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(recoveryViewModel.showSupportDialog.value)
+    composeTestRule.onNodeWithTag("recovery_support_dialog").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("recovery_support_dialog_close_button").performClick()
+    composeTestRule.waitForIdle()
+    assertFalse(recoveryViewModel.showSupportDialog.value)
+
+    // Test Back button
+    composeTestRule.onNodeWithTag("recovery_back_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(navigatedBack)
+  }
+
+  @Test
+  fun profileCompletionScreen_displaysReferenceUiValidatesUsernameAndPasswordAndCompletesProfile() {
+    val profileViewModel = com.cineflow.ai.feature.auth.ProfileCompletionViewModel()
+    profileViewModel.prepareForGoogleSignIn()
+    var navigatedBack = false
+    var completedUid: String? = null
+
+    composeTestRule.setContent {
+      CineFlowTheme {
+        com.cineflow.ai.feature.auth.ProfileCompletionScreen(
+          viewModel = profileViewModel,
+          onBack = { navigatedBack = true },
+          onProfileCompleted = { uid -> completedUid = uid }
+        )
+      }
+    }
+
+    composeTestRule.waitForIdle()
+
+    // Verify top hero, avatar picker, and main card fields matching CineFlow AI Profile Setup.png
+    composeTestRule.onNodeWithTag("profile_setup_top_hero").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_setup_back_button").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_setup_avatar_picker_button").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_setup_main_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_setup_username_input").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_setup_username_valid_badge").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_setup_country_code_selector").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_setup_mobile_input").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_setup_password_input").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_setup_password_visibility_toggle").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_setup_confirm_password_input").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_setup_confirm_password_visibility_toggle").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_setup_password_requirements_box").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_setup_req_length").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_setup_req_uppercase").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_setup_req_lowercase").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_setup_req_number").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_setup_submit_button").performScrollTo().assertIsDisplayed()
+
+    // Initial state: all green ticks must be FALSE (never pre-ticked when fields are empty)
+    assertFalse(profileViewModel.isUsernameValidAndAvailable.value)
+    assertFalse(profileViewModel.hasValidPasswordLength.value)
+    assertFalse(profileViewModel.hasUppercase.value)
+    assertFalse(profileViewModel.hasLowercase.value)
+    assertFalse(profileViewModel.hasNumber.value)
+    assertFalse(profileViewModel.isPasswordStrong.value)
+    assertFalse(profileViewModel.isConfirmPasswordMatching.value)
+    assertFalse(profileViewModel.isProfileSetupCompleted.value)
+
+    // Default country code is +91
+    assertEquals("+91", profileViewModel.countryCode.value)
+
+    // Taken username ("admin") sets isUsernameValidAndAvailable to false
+    profileViewModel.onUsernameChange("admin")
+    assertFalse(profileViewModel.isUsernameValidAndAvailable.value)
+    assertFalse(profileViewModel.submitProfileCompletion())
+    assertNotNull(profileViewModel.errorMessage.value)
+
+    // Valid unique username sets isUsernameValidAndAvailable to true
+    profileViewModel.onUsernameChange("cineflow_studio")
+    assertTrue(profileViewModel.isUsernameValidAndAvailable.value)
+
+    // Mobile number validation: incomplete digits for +91 fail validation; 10 digits pass
+    profileViewModel.onMobileNumberChange("98765")
+    assertFalse(profileViewModel.isMobileNumberValid.value)
+    assertFalse(profileViewModel.submitProfileCompletion())
+    profileViewModel.onMobileNumberChange("9876543210")
+    assertTrue(profileViewModel.isMobileNumberValid.value)
+
+    // Live password requirement green ticks update step-by-step as characters are typed
+    profileViewModel.onPasswordChange("a")
+    assertTrue(profileViewModel.hasLowercase.value)
+    assertFalse(profileViewModel.hasUppercase.value)
+    assertFalse(profileViewModel.hasNumber.value)
+    assertFalse(profileViewModel.hasValidPasswordLength.value)
+
+    profileViewModel.onPasswordChange("aB1")
+    assertTrue(profileViewModel.hasLowercase.value)
+    assertTrue(profileViewModel.hasUppercase.value)
+    assertTrue(profileViewModel.hasNumber.value)
+    assertFalse(profileViewModel.hasValidPasswordLength.value)
+    assertFalse(profileViewModel.isPasswordStrong.value)
+
+    // Mismatched confirm password fails validation even when password is strong
+    profileViewModel.onPasswordChange("CineFlow2026")
+    assertTrue(profileViewModel.hasValidPasswordLength.value)
+    assertTrue(profileViewModel.isPasswordStrong.value)
+    profileViewModel.onConfirmPasswordChange("WrongPass2026")
+    assertFalse(profileViewModel.isConfirmPasswordMatching.value)
+    assertFalse(profileViewModel.submitProfileCompletion())
+    assertNotNull(profileViewModel.errorMessage.value)
+
+    // Matching valid password completes profile and allocates CF + 8 digits Public User ID
+    profileViewModel.onConfirmPasswordChange("CineFlow2026")
+    assertTrue(profileViewModel.isConfirmPasswordMatching.value)
+    assertTrue(profileViewModel.submitProfileCompletion { uid -> completedUid = uid })
+    assertTrue(profileViewModel.isProfileSetupCompleted.value)
+    assertNotNull(completedUid)
+    assertTrue(Regex("^CF\\d{8}$").matches(completedUid!!))
+
+    // Section 10 rule: when password is already configured, do not ask for password
+    profileViewModel.setPasswordAlreadyConfigured(true)
+    assertFalse(profileViewModel.passwordRequired.value)
+    profileViewModel.onUsernameChange("cineflow_pro_2")
+    assertTrue(profileViewModel.submitProfileCompletion())
+
+    // Back button works
+    composeTestRule.onNodeWithTag("profile_setup_back_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(navigatedBack)
+  }
+
+  @Test
+  fun profileHubScreen_displaysReferenceUiCopiesPublicUidOpensSectionsAndLogsOut() {
+    val hubViewModel = com.cineflow.ai.feature.auth.ProfileHubViewModel()
+    var navigatedBack = false
+    var loggedOut = false
+
+    composeTestRule.setContent {
+      CineFlowTheme {
+        com.cineflow.ai.feature.auth.ProfileHubScreen(
+          viewModel = hubViewModel,
+          onBack = { navigatedBack = true },
+          onLogOut = { loggedOut = true }
+        )
+      }
+    }
+
+    composeTestRule.waitForIdle()
+
+    // Verify top header, identity section, and badges matching CineFlow AI Neon Profile Dashboard.png
+    composeTestRule.onNodeWithTag("profile_hub_top_banner").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_back_button").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_settings_button").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_identity_section").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_avatar_camera_button").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_display_name").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_verified_badge").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_username").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_public_uid_badge").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_subscriber_badge").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_active_badge").performScrollTo().assertIsDisplayed()
+
+    // Public User ID matches CF + 8 numeric digits format
+    assertTrue(Regex("^CF\\d{8}$").matches(hubViewModel.publicUid.value))
+
+    // Copy Public User ID
+    composeTestRule.onNodeWithTag("profile_hub_public_uid_badge").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertNotNull(hubViewModel.copiedUidFeedback.value)
+
+    // Verify 3-column stats bar and Cloud Storage card
+    composeTestRule.onNodeWithTag("profile_hub_stats_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_stat_projects").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_stat_backups").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_stat_storage").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_cloud_storage_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_storage_usage_text").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_storage_progress_bar").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_storage_manage_button").performScrollTo().assertIsDisplayed()
+
+    // Verify all 5 action navigation rows
+    composeTestRule.onNodeWithTag("profile_hub_row_personal_info").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_row_subscription_plan").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_row_cloud_backup").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_row_account_security").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_row_linked_accounts").performScrollTo().assertIsDisplayed()
+
+    // Clicking Personal Information opens section dialog
+    composeTestRule.onNodeWithTag("profile_hub_row_personal_info").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("profile_hub_section_dialog").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("profile_hub_section_dialog_close_button").performClick()
+    composeTestRule.waitForIdle()
+
+    // Clicking Log Out triggers onLogOut
+    composeTestRule.onNodeWithTag("profile_hub_logout_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(loggedOut)
+
+    // Clicking Back button triggers onBack
+    composeTestRule.onNodeWithTag("profile_hub_back_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(navigatedBack)
+  }
+
+  @Test
+  fun personalInformationScreen_displaysReferenceUiEditsFieldsCopiesPublicUidAndSavesChanges() {
+    val personalInfoViewModel = com.cineflow.ai.feature.auth.PersonalInformationViewModel()
+    var navigatedBack = false
+    var savedFullName: String? = null
+    var savedUsername: String? = null
+
+    composeTestRule.setContent {
+      CineFlowTheme {
+        com.cineflow.ai.feature.auth.PersonalInformationScreen(
+          viewModel = personalInfoViewModel,
+          onBack = { navigatedBack = true },
+          onChangesSaved = { name, user, _, _ ->
+            savedFullName = name
+            savedUsername = user
+          }
+        )
+      }
+    }
+
+    composeTestRule.waitForIdle()
+
+    // Verify top banner, identity row, and Change Profile Photo pill matching CineFlow AI Personal Profile Screen.png
+    composeTestRule.onNodeWithTag("personal_info_top_banner").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("personal_info_back_button").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("personal_info_identity_section").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("personal_info_avatar_camera_button").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("personal_info_header_name").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("personal_info_verified_badge").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("personal_info_header_uid").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("personal_info_header_username").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("personal_info_change_photo_button").performScrollTo().assertIsDisplayed()
+
+    // Verify Personal Details card & all 5 rows
+    composeTestRule.onNodeWithTag("personal_info_details_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("personal_info_row_full_name").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("personal_info_row_username").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("personal_info_row_email").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("personal_info_email_verified_badge", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule.onNodeWithTag("personal_info_row_mobile").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("personal_info_mobile_verified_badge", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule.onNodeWithTag("personal_info_row_public_uid").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("personal_info_copy_uid_button").performScrollTo().assertIsDisplayed()
+
+    // Verify Additional Information card & all 3 rows
+    composeTestRule.onNodeWithTag("personal_info_additional_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("personal_info_row_dob").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("personal_info_row_gender").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("personal_info_row_location").performScrollTo().assertIsDisplayed()
+
+    // Verify Save Changes CTA button
+    composeTestRule.onNodeWithTag("personal_info_save_button").performScrollTo().assertIsDisplayed()
+
+    // Public User ID matches CF + 8 numeric digits format
+    assertTrue(Regex("^CF\\d{8}$").matches(personalInfoViewModel.publicUid.value))
+
+    // Copy Public User ID button works
+    composeTestRule.onNodeWithTag("personal_info_copy_uid_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertNotNull(personalInfoViewModel.statusMessage.value)
+
+    // Edit Full Name via modal dialog
+    composeTestRule.onNodeWithTag("personal_info_row_full_name").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("personal_info_edit_dialog").assertIsDisplayed()
+    personalInfoViewModel.onEditDraftChange("Manirul Studio")
+    composeTestRule.onNodeWithTag("personal_info_edit_dialog_confirm_button").performClick()
+    composeTestRule.waitForIdle()
+    assertEquals("Manirul Studio", personalInfoViewModel.fullName.value)
+
+    // Save Changes button validates and triggers callback
+    composeTestRule.onNodeWithTag("personal_info_save_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertEquals("Manirul Studio", savedFullName)
+    assertEquals("manirul_editz", savedUsername)
+
+    // Back button works
+    composeTestRule.onNodeWithTag("personal_info_back_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(navigatedBack)
+  }
+
+  @Test
+  fun subscriptionPlansScreen_displaysReferenceUiSwitchesCyclesAndEnforcesSection21DisabledPayments() {
+    val subViewModel = com.cineflow.ai.feature.auth.SubscriptionPlansViewModel()
+    var navigatedBack = false
+
+    composeTestRule.setContent {
+      CineFlowTheme {
+        com.cineflow.ai.feature.auth.SubscriptionPlansScreen(
+          viewModel = subViewModel,
+          onBack = { navigatedBack = true }
+        )
+      }
+    }
+
+    composeTestRule.waitForIdle()
+
+    // Verify top hero, back button, and Monthly/Yearly billing toggle bar
+    composeTestRule.onNodeWithTag("subscription_plans_screen").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_top_hero").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_back_button").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_billing_toggle_bar").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_toggle_monthly").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_toggle_yearly").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_save_40_badge").performScrollTo().assertIsDisplayed()
+
+    // Verify Free Plan & Pro Plan cards and buttons
+    composeTestRule.onNodeWithTag("subscription_plans_row").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_free_plan_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_free_price_text").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_free_plan_button").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_pro_plan_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_most_popular_badge").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_pro_price_text").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_upgrade_pro_button").performScrollTo().assertIsDisplayed()
+
+    // Verify 4-column feature highlights bar
+    composeTestRule.onNodeWithTag("subscription_feature_highlights_bar").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_highlight_cloud_storage").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_highlight_ai_tools").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_highlight_4k_export").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_highlight_priority_support").performScrollTo().assertIsDisplayed()
+
+    // Verify bottom Management card rows (Manage Subscription & Subscription History)
+    composeTestRule.onNodeWithTag("subscription_management_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_manage_row").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_history_row").performScrollTo().assertIsDisplayed()
+
+    // Default cycle is MONTHLY; switching to YEARLY updates state
+    assertEquals(
+      com.cineflow.ai.feature.auth.SubscriptionBillingCycle.MONTHLY,
+      subViewModel.selectedBillingCycle.value
+    )
+    composeTestRule.onNodeWithTag("subscription_toggle_yearly").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertEquals(
+      com.cineflow.ai.feature.auth.SubscriptionBillingCycle.YEARLY,
+      subViewModel.selectedBillingCycle.value
+    )
+
+    // Section 21: Payment integration is disabled; Upgrade to Pro shows prepared dialog and never grants fake PRO tier
+    assertFalse(subViewModel.isPaymentIntegrationEnabled)
+    composeTestRule.onNodeWithTag("subscription_upgrade_pro_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("subscription_status_dialog").assertIsDisplayed()
+    assertEquals(
+      com.cineflow.ai.feature.auth.SubscriptionPlanTier.FREE,
+      subViewModel.currentPlanTier.value
+    )
+    composeTestRule.onNodeWithTag("subscription_dialog_close_button").performClick()
+    composeTestRule.waitForIdle()
+
+    // Manage Subscription & Subscription History open their prepared modals
+    composeTestRule.onNodeWithTag("subscription_manage_row").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("subscription_status_dialog").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_dialog_close_button").performClick()
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithTag("subscription_history_row").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("subscription_status_dialog").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("subscription_dialog_close_button").performClick()
+    composeTestRule.waitForIdle()
+
+    // Back button works
+    composeTestRule.onNodeWithTag("subscription_back_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(navigatedBack)
+  }
+
+  @Test
+  fun cloudBackupScreen_displaysReferenceUiUpdatesSelectionSummaryAndEnforcesManualBackup() {
+    val backupViewModel = com.cineflow.ai.feature.backup.CloudBackupViewModel()
+    var navigatedBack = false
+
+    composeTestRule.setContent {
+      CineFlowTheme {
+        com.cineflow.ai.feature.backup.CloudBackupScreen(
+          viewModel = backupViewModel,
+          onBack = { navigatedBack = true }
+        )
+      }
+    }
+
+    composeTestRule.waitForIdle()
+
+    // Verify top hero and back button matching Neon Cloud Backup Dashboard.png
+    composeTestRule.onNodeWithTag("cloud_backup_screen").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_top_hero").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_back_button").assertIsDisplayed()
+
+    // Verify Select Data to Backup card & rows
+    composeTestRule.onNodeWithTag("cloud_backup_select_data_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_select_all_row").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_select_all_checkbox", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_selected_count_label", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_row_projects").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_row_media_assets").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_row_app_data").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_row_ai_assets").performScrollTo().assertIsDisplayed()
+
+    // Verify Backup Summary card
+    composeTestRule.onNodeWithTag("cloud_backup_summary_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_summary_selected_items").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_summary_total_size").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_summary_cloud_storage").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_storage_progress_bar").performScrollTo().assertIsDisplayed()
+
+    // Verify Backup Options card & Start Backup CTA
+    composeTestRule.onNodeWithTag("cloud_backup_options_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_auto_backup_row").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_auto_backup_switch", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_manual_now_row").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_manual_radio", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_start_button").performScrollTo().assertIsDisplayed()
+
+    // Initial selection matches reference screenshot: 3 of 4 selected (Projects, Media Assets, App Data & Presets) = 5.23 GB
+    assertEquals(3, backupViewModel.selectedCount())
+    assertEquals(4, backupViewModel.totalCategoriesCount)
+    assertEquals("5.23 GB", backupViewModel.formattedTotalSizeGb())
+
+    // Toggle Select All -> 4 of 4 selected (5.73 GB)
+    composeTestRule.onNodeWithTag("cloud_backup_select_all_row").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertEquals(4, backupViewModel.selectedCount())
+    assertEquals("5.73 GB", backupViewModel.formattedTotalSizeGb())
+
+    // Toggle Select All again -> 0 of 4 selected (0.00 GB)
+    composeTestRule.onNodeWithTag("cloud_backup_select_all_row").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertEquals(0, backupViewModel.selectedCount())
+    assertEquals("0.00 GB", backupViewModel.formattedTotalSizeGb())
+
+    // Restore 3 default categories and trigger Manual Backup
+    backupViewModel.toggleCategory(com.cineflow.ai.feature.backup.CloudBackupCategory.PROJECTS)
+    backupViewModel.toggleCategory(com.cineflow.ai.feature.backup.CloudBackupCategory.MEDIA_ASSETS)
+    backupViewModel.toggleCategory(com.cineflow.ai.feature.backup.CloudBackupCategory.APP_DATA_PRESETS)
+    composeTestRule.waitForIdle()
+
+    // Section 12: Auto Backup is strictly disabled; tapping Auto Backup informs user and keeps autoBackupEnabled = false
+    assertFalse(backupViewModel.autoBackupEnabled.value)
+    composeTestRule.onNodeWithTag("cloud_backup_auto_backup_row").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertFalse(backupViewModel.autoBackupEnabled.value)
+    composeTestRule.onNodeWithTag("cloud_backup_status_dialog").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_dialog_close_button").performClick()
+    composeTestRule.waitForIdle()
+
+    // Start Backup (Manual) executes manual backup and shows completion modal
+    composeTestRule.onNodeWithTag("cloud_backup_start_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("cloud_backup_status_dialog").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_dialog_close_button").performClick()
+    composeTestRule.waitForIdle()
+
+    // Back button works
+    composeTestRule.onNodeWithTag("cloud_backup_back_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(navigatedBack)
+  }
 }
+
+
+
+
+
+
 
 

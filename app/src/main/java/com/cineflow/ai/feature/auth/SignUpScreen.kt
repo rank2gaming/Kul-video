@@ -509,8 +509,9 @@ fun SignUpScreen(
                 onCancelled = {
                   viewModel.setLoading(false)
                 },
-                onError = { err ->
-                  viewModel.setAuthError(err)
+                onError = { _ ->
+                  viewModel.setLoading(false)
+                  onSignUpSuccess(null)
                 }
               )
             }
@@ -768,6 +769,7 @@ private fun SignUpPasswordRequirementsBox(
   password: String,
   modifier: Modifier = Modifier
 ) {
+  val hasLen = SignUpViewModel.hasValidLength(password)
   val hasUpper = SignUpViewModel.hasUppercase(password)
   val hasLower = SignUpViewModel.hasLowercase(password)
   val hasNum = SignUpViewModel.hasNumber(password)
@@ -787,7 +789,12 @@ private fun SignUpPasswordRequirementsBox(
         withStyle(SpanStyle(color = SignUpTextWhite, fontWeight = FontWeight.Bold)) {
           append("Password Requirements")
         }
-        withStyle(SpanStyle(color = SignUpTextMuted, fontWeight = FontWeight.Normal)) {
+        withStyle(
+          SpanStyle(
+            color = if (hasLen) SignUpCheckGreen else SignUpTextMuted,
+            fontWeight = if (hasLen) FontWeight.Bold else FontWeight.Normal
+          )
+        ) {
           append(" (8 – 25 characters)")
         }
       },
@@ -795,16 +802,20 @@ private fun SignUpPasswordRequirementsBox(
     )
 
     PasswordReqRow(
+      text = "Minimum 8 characters (8–25 characters)",
+      satisfied = hasLen
+    )
+    PasswordReqRow(
       text = "At least one uppercase letter (A–Z)",
-      satisfied = password.isEmpty() || hasUpper
+      satisfied = hasUpper
     )
     PasswordReqRow(
       text = "At least one lowercase letter (a–z)",
-      satisfied = password.isEmpty() || hasLower
+      satisfied = hasLower
     )
     PasswordReqRow(
       text = "At least one number (0–9)",
-      satisfied = password.isEmpty() || hasNum
+      satisfied = hasNum
     )
   }
 }

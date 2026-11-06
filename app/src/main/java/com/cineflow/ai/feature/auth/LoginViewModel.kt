@@ -109,6 +109,11 @@ class LoginViewModel : ViewModel() {
     _infoMessage.value = "Password recovery link prepared for $trimmedEmail. Check your inbox or sign in with Google."
   }
 
+  fun signOutLocalSession() {
+    _isLocalSessionAuthenticated.value = false
+    _password.value = ""
+  }
+
   companion object {
     fun validateEmail(email: String): String? {
       if (email.isBlank()) {

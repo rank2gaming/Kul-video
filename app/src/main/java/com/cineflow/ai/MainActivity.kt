@@ -1,5 +1,6 @@
 package com.cineflow.ai
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -19,12 +20,31 @@ import com.cineflow.ai.core.firebase.configureAppCheck
 import com.cineflow.ai.core.model.VideoProject
 import com.cineflow.ai.data.cloud.CloudProjectSyncRepository
 import com.cineflow.ai.data.project.LocalProjectRepository
+import com.cineflow.ai.feature.auth.AccountRecoveryScreen
+import com.cineflow.ai.feature.auth.AccountRecoveryViewModel
 import com.cineflow.ai.feature.auth.LoginScreen
 import com.cineflow.ai.feature.auth.LoginViewModel
+import com.cineflow.ai.feature.auth.PersonalInformationScreen
+import com.cineflow.ai.feature.auth.PersonalInformationViewModel
+import com.cineflow.ai.feature.auth.ProfileCompletionScreen
+import com.cineflow.ai.feature.auth.ProfileCompletionViewModel
+import com.cineflow.ai.feature.auth.ProfileHubScreen
+import com.cineflow.ai.feature.auth.ProfileHubSection
+import com.cineflow.ai.feature.auth.ProfileHubViewModel
+import com.cineflow.ai.feature.auth.ROUTE_ACCOUNT_RECOVERY
 import com.cineflow.ai.feature.auth.ROUTE_LOGIN
+import com.cineflow.ai.feature.auth.ROUTE_PERSONAL_INFORMATION
+import com.cineflow.ai.feature.auth.ROUTE_PROFILE_COMPLETION
+import com.cineflow.ai.feature.auth.ROUTE_PROFILE_HUB
 import com.cineflow.ai.feature.auth.ROUTE_SIGN_UP
+import com.cineflow.ai.feature.auth.ROUTE_SUBSCRIPTION_PLANS
 import com.cineflow.ai.feature.auth.SignUpScreen
 import com.cineflow.ai.feature.auth.SignUpViewModel
+import com.cineflow.ai.feature.auth.SubscriptionPlansScreen
+import com.cineflow.ai.feature.auth.SubscriptionPlansViewModel
+import com.cineflow.ai.feature.backup.CloudBackupScreen
+import com.cineflow.ai.feature.backup.CloudBackupViewModel
+import com.cineflow.ai.feature.backup.ROUTE_CLOUD_BACKUP
 import com.cineflow.ai.feature.editor.VideoEditorScreen
 import com.cineflow.ai.feature.editor.VideoEditorViewModel
 import com.cineflow.ai.feature.export.ExportVideoScreen
@@ -43,6 +63,8 @@ import com.cineflow.ai.ui.theme.CineFlowTheme
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
+
+private const val PROFILE_SETUP_PREFS = "cineflow_profile_setup_prefs"
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,12 +87,21 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
   val context = LocalContext.current
+  val prefs = remember(context) {
+    context.getSharedPreferences(PROFILE_SETUP_PREFS, Context.MODE_PRIVATE)
+  }
   val database = remember(context) { CineFlowDatabase.getInstance(context) }
   val localProjectRepository = remember(database) {
     LocalProjectRepository(database.localProjectDao())
   }
   val loginViewModel: LoginViewModel = viewModel()
   val signUpViewModel: SignUpViewModel = viewModel()
+  val accountRecoveryViewModel: AccountRecoveryViewModel = viewModel()
+  val profileCompletionViewModel: ProfileCompletionViewModel = viewModel()
+  val profileHubViewModel: ProfileHubViewModel = viewModel()
+  val personalInfoViewModel: PersonalInformationViewModel = viewModel()
+  val subscriptionPlansViewModel: SubscriptionPlansViewModel = viewModel()
+  val cloudBackupViewModel: CloudBackupViewModel = viewModel()
   val homeViewModel: HomeDashboardViewModel = viewModel(
     factory = HomeDashboardViewModel.provideFactory(localProjectRepository)
   )
@@ -84,11 +115,31 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
     .collectAsStateWithLifecycle()
   val createdPublicUid by signUpViewModel.createdPublicUid
     .collectAsStateWithLifecycle()
+  val completedPublicUid by profileCompletionViewModel.completedPublicUid
+    .collectAsStateWithLifecycle()
+  val isProfileSetupCompleted by profileCompletionViewModel.isProfileSetupCompleted
+    .collectAsStateWithLifecycle()
   val localProjects by homeViewModel.localProjects.collectAsStateWithLifecycle()
 
-  // Section 9: The first application screen is Login (when unsigned); Skip opens Home Dashboard in unsigned local-only mode.
+  val initialGoogleUid = auth.currentUser?.uid
+  val wasGoogleProfilePreviouslyCompleted = initialGoogleUid != null &&
+    prefs.getBoolean("profile_setup_completed_$initialGoogleUid", false)
+
+  // Section 9 & 10:
+  // - Unsigned user -> starts on Login Screen (`ROUTE_LOGIN`)
+  // - Google Sign-In user who has NOT completed Profile Setup -> MUST go to `ROUTE_PROFILE_COMPLETION`
+  // - Google Sign-In user who HAS completed Profile Setup -> goes to `ROUTE_HOME_DASHBOARD`
   var currentRoute by remember {
-    mutableStateOf(if (auth.currentUser != null) ROUTE_HOME_DASHBOARD else ROUTE_LOGIN)
+    mutableStateOf(
+      when {
+        initialGoogleUid == null -> ROUTE_LOGIN
+        wasGoogleProfilePreviouslyCompleted -> ROUTE_HOME_DASHBOARD
+        else -> {
+          profileCompletionViewModel.prepareForGoogleSignIn()
+          ROUTE_PROFILE_COMPLETION
+        }
+      }
+    )
   }
   var activeEditorProject by remember { mutableStateOf<VideoProject?>(null) }
   var publicUid by remember { mutableStateOf<String?>(null) }
@@ -97,30 +148,39 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
     localProjectRepository.seedDemoProjectsIfEmpty()
   }
 
-  // Auth-gated Cloud Metadata Synchronization:
-  // Only instantiated and executed when currentUser != null (Section 3.H & 11).
   val signedInUser = currentUser
-  val isEffectiveSignedIn = (signedInUser != null) || isLocalSessionAuthenticated || (createdPublicUid != null)
+  val isGoogleUserCompleted = isProfileSetupCompleted ||
+    (signedInUser != null && prefs.getBoolean("profile_setup_completed_${signedInUser.uid}", false))
+  val isEffectiveSignedIn = (signedInUser != null && isGoogleUserCompleted) ||
+    isLocalSessionAuthenticated ||
+    (createdPublicUid != null) ||
+    (completedPublicUid != null)
 
-  LaunchedEffect(signedInUser?.uid, localProjects.size) {
-    if (signedInUser != null) {
+  LaunchedEffect(signedInUser?.uid, isGoogleUserCompleted, completedPublicUid, localProjects.size) {
+    if (signedInUser != null && isGoogleUserCompleted) {
       val cloudRepo = CloudProjectSyncRepository(context.applicationContext)
-      publicUid = cloudRepo.formatPublicUid(signedInUser.uid)
-      val fallbackUsername = signedInUser.displayName
-        ?.replace(Regex("[^a-zA-Z0-9_\\-]"), "_")
-        ?.take(24)
+      publicUid = completedPublicUid ?: cloudRepo.formatPublicUid(signedInUser.uid)
+      val preferredUsername = profileCompletionViewModel.username.value
+        .trim()
+        .takeIf { it.length >= 3 }
+        ?: prefs.getString("profile_setup_username_${signedInUser.uid}", null)
+        ?: signedInUser.displayName
+          ?.replace(Regex("[^a-zA-Z0-9_\\-]"), "_")
+          ?.take(24)
         ?: "creator_${signedInUser.uid.take(6)}"
       cloudRepo.ensureUserProfile(
-        username = fallbackUsername,
+        username = preferredUsername,
         displayName = signedInUser.displayName,
         email = signedInUser.email,
         photoUrl = signedInUser.photoUrl?.toString()
       ).onSuccess { profile ->
-        publicUid = profile.publicUid
+        publicUid = completedPublicUid ?: profile.publicUid
       }
       localProjects.forEach { project ->
         cloudRepo.syncProjectMetadata(project)
       }
+    } else if (completedPublicUid != null) {
+      publicUid = completedPublicUid
     } else if (createdPublicUid != null) {
       publicUid = createdPublicUid
     } else {
@@ -133,14 +193,27 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
       LoginScreen(
         viewModel = loginViewModel,
         onLoginSuccess = {
+          // Email + Password login goes directly to Home Dashboard (Profile Setup is ONLY for Google Sign-In)
           currentRoute = ROUTE_HOME_DASHBOARD
         },
         onSkipToHome = {
           // Section 3.E & 9: Skip opens Home Dashboard in unsigned local-only mode without creating any Firebase user.
           currentRoute = ROUTE_HOME_DASHBOARD
         },
+        onGoogleSignInSuccess = {
+          // Google Sign-In MUST route to Profile Setup screen before allowing entry to Home Dashboard
+          auth.currentUser?.uid?.let { uid ->
+            prefs.edit().putBoolean("profile_setup_completed_$uid", false).apply()
+          }
+          profileCompletionViewModel.prepareForGoogleSignIn()
+          currentRoute = ROUTE_PROFILE_COMPLETION
+        },
         onNavigateToSignUp = {
           currentRoute = ROUTE_SIGN_UP
+        },
+        onNavigateToForgotPassword = {
+          accountRecoveryViewModel.prefillEmailIfBlank(loginViewModel.email.value)
+          currentRoute = ROUTE_ACCOUNT_RECOVERY
         }
       )
     }
@@ -153,9 +226,142 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
         },
         onSignUpSuccess = { allocatedPublicUid ->
           if (allocatedPublicUid != null) {
+            // Standard Sign Up form already collected all fields -> go to Home Dashboard
             publicUid = allocatedPublicUid
+            currentRoute = ROUTE_HOME_DASHBOARD
+          } else {
+            // Section 10: Google Sign-In MUST route to Profile Completion before Home Dashboard
+            auth.currentUser?.uid?.let { uid ->
+              prefs.edit().putBoolean("profile_setup_completed_$uid", false).apply()
+            }
+            profileCompletionViewModel.prepareForGoogleSignIn()
+            currentRoute = ROUTE_PROFILE_COMPLETION
           }
+        }
+      )
+    }
+
+    ROUTE_PROFILE_COMPLETION -> {
+      ProfileCompletionScreen(
+        viewModel = profileCompletionViewModel,
+        onBack = {
+          // Pressing Back before completing profile signs out incomplete Google session and returns to Login
+          runCatching { auth.signOut() }
+          currentRoute = ROUTE_LOGIN
+        },
+        onProfileCompleted = { allocatedPublicUid ->
+          val completedUsername = profileCompletionViewModel.username.value.trim()
+          val completedMobile = profileCompletionViewModel.mobileNumber.value.trim().let { digits ->
+            if (digits.isNotEmpty()) "${profileCompletionViewModel.countryCode.value} $digits" else ""
+          }
+          auth.currentUser?.uid?.let { uid ->
+            prefs.edit()
+              .putBoolean("profile_setup_completed_$uid", true)
+              .putString("profile_setup_username_$uid", completedUsername)
+              .apply()
+          }
+          publicUid = allocatedPublicUid
+          profileHubViewModel.syncIdentity(
+            displayName = auth.currentUser?.displayName ?: completedUsername,
+            username = completedUsername,
+            publicUid = allocatedPublicUid
+          )
+          personalInfoViewModel.syncFromProfile(
+            fullName = auth.currentUser?.displayName ?: completedUsername,
+            username = completedUsername,
+            email = auth.currentUser?.email,
+            mobile = completedMobile,
+            publicUid = allocatedPublicUid
+          )
           currentRoute = ROUTE_HOME_DASHBOARD
+        }
+      )
+    }
+
+    ROUTE_ACCOUNT_RECOVERY -> {
+      AccountRecoveryScreen(
+        viewModel = accountRecoveryViewModel,
+        onBackToLogin = {
+          currentRoute = ROUTE_LOGIN
+        }
+      )
+    }
+
+    ROUTE_PROFILE_HUB -> {
+      ProfileHubScreen(
+        viewModel = profileHubViewModel,
+        onBack = {
+          currentRoute = ROUTE_HOME_DASHBOARD
+        },
+        onLogOut = {
+          auth.currentUser?.uid?.let { uid ->
+            prefs.edit().putBoolean("profile_setup_completed_$uid", false).apply()
+          }
+          runCatching { auth.signOut() }
+          loginViewModel.signOutLocalSession()
+          profileCompletionViewModel.prepareForGoogleSignIn()
+          publicUid = null
+          currentRoute = ROUTE_LOGIN
+        },
+        onNavigateToSection = { section ->
+          when (section) {
+            ProfileHubSection.PERSONAL_INFORMATION -> {
+              val completedMobile = profileCompletionViewModel.mobileNumber.value.trim().let { digits ->
+                if (digits.isNotEmpty()) "${profileCompletionViewModel.countryCode.value} $digits" else ""
+              }
+              personalInfoViewModel.syncFromProfile(
+                fullName = profileHubViewModel.displayName.value,
+                username = profileHubViewModel.username.value,
+                email = signedInUser?.email ?: signUpViewModel.email.value,
+                mobile = completedMobile.ifBlank { signUpViewModel.mobileNumber.value },
+                publicUid = profileHubViewModel.publicUid.value
+              )
+              currentRoute = ROUTE_PERSONAL_INFORMATION
+            }
+            ProfileHubSection.SUBSCRIPTION_PLAN -> {
+              currentRoute = ROUTE_SUBSCRIPTION_PLANS
+            }
+            ProfileHubSection.CLOUD_BACKUP_RESTORE -> {
+              currentRoute = ROUTE_CLOUD_BACKUP
+            }
+            else -> {
+              profileHubViewModel.openSection(section)
+            }
+          }
+        }
+      )
+    }
+
+    ROUTE_PERSONAL_INFORMATION -> {
+      PersonalInformationScreen(
+        viewModel = personalInfoViewModel,
+        onBack = {
+          currentRoute = ROUTE_PROFILE_HUB
+        },
+        onChangesSaved = { savedName, savedUsername, _, _ ->
+          profileHubViewModel.syncIdentity(
+            displayName = savedName,
+            username = savedUsername,
+            publicUid = personalInfoViewModel.publicUid.value
+          )
+        }
+      )
+    }
+
+    ROUTE_SUBSCRIPTION_PLANS -> {
+      SubscriptionPlansScreen(
+        viewModel = subscriptionPlansViewModel,
+        onBack = {
+          currentRoute = ROUTE_PROFILE_HUB
+        }
+      )
+    }
+
+    ROUTE_CLOUD_BACKUP -> {
+      CloudBackupScreen(
+        viewModel = cloudBackupViewModel,
+        onBack = {
+          currentRoute = ROUTE_PROFILE_HUB
         }
       )
     }
@@ -169,7 +375,29 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
           ?: loginViewModel.email.value.takeIf { isLocalSessionAuthenticated },
         publicUid = publicUid,
         onNavigateToVideoEdit = { currentRoute = ROUTE_PROJECT_MANAGEMENT },
-        onAuthChanged = { /* AuthStateListener Flow updates currentUser reactively */ }
+        onAuthChanged = {
+          // If an unsigned user initiates Google Sign-In from the Home 3-dot sheet,
+          // route them to Profile Setup before allowing an authenticated Home session!
+          if (!isEffectiveSignedIn) {
+            auth.currentUser?.uid?.let { uid ->
+              prefs.edit().putBoolean("profile_setup_completed_$uid", false).apply()
+            }
+            profileCompletionViewModel.prepareForGoogleSignIn()
+            currentRoute = ROUTE_PROFILE_COMPLETION
+          }
+        },
+        onNavigateToProfileHub = {
+          val activeName = signedInUser?.displayName
+            ?: signUpViewModel.fullName.value.takeIf { it.isNotBlank() }
+          val activeUsername = profileCompletionViewModel.username.value.takeIf { it.isNotBlank() }
+            ?: signUpViewModel.username.value.takeIf { it.isNotBlank() }
+          profileHubViewModel.syncIdentity(
+            displayName = activeName,
+            username = activeUsername,
+            publicUid = publicUid
+          )
+          currentRoute = ROUTE_PROFILE_HUB
+        }
       )
     }
 
@@ -250,4 +478,3 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
     }
   }
 }
-
