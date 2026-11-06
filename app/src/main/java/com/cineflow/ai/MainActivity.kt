@@ -42,9 +42,12 @@ import com.cineflow.ai.feature.auth.SignUpScreen
 import com.cineflow.ai.feature.auth.SignUpViewModel
 import com.cineflow.ai.feature.auth.SubscriptionPlansScreen
 import com.cineflow.ai.feature.auth.SubscriptionPlansViewModel
+import com.cineflow.ai.feature.backup.CloudBackupDashboardScreen
+import com.cineflow.ai.feature.backup.CloudBackupDashboardViewModel
 import com.cineflow.ai.feature.backup.CloudBackupScreen
 import com.cineflow.ai.feature.backup.CloudBackupViewModel
 import com.cineflow.ai.feature.backup.ROUTE_CLOUD_BACKUP
+import com.cineflow.ai.feature.backup.ROUTE_CLOUD_BACKUP_DASHBOARD
 import com.cineflow.ai.feature.editor.VideoEditorScreen
 import com.cineflow.ai.feature.editor.VideoEditorViewModel
 import com.cineflow.ai.feature.export.ExportVideoScreen
@@ -101,6 +104,7 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
   val profileHubViewModel: ProfileHubViewModel = viewModel()
   val personalInfoViewModel: PersonalInformationViewModel = viewModel()
   val subscriptionPlansViewModel: SubscriptionPlansViewModel = viewModel()
+  val cloudBackupDashboardViewModel: CloudBackupDashboardViewModel = viewModel()
   val cloudBackupViewModel: CloudBackupViewModel = viewModel()
   val homeViewModel: HomeDashboardViewModel = viewModel(
     factory = HomeDashboardViewModel.provideFactory(localProjectRepository)
@@ -322,7 +326,7 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
               currentRoute = ROUTE_SUBSCRIPTION_PLANS
             }
             ProfileHubSection.CLOUD_BACKUP_RESTORE -> {
-              currentRoute = ROUTE_CLOUD_BACKUP
+              currentRoute = ROUTE_CLOUD_BACKUP_DASHBOARD
             }
             else -> {
               profileHubViewModel.openSection(section)
@@ -357,11 +361,26 @@ fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
       )
     }
 
+    ROUTE_CLOUD_BACKUP_DASHBOARD -> {
+      CloudBackupDashboardScreen(
+        viewModel = cloudBackupDashboardViewModel,
+        onBack = {
+          currentRoute = ROUTE_PROFILE_HUB
+        },
+        onNavigateToSelectBackupData = {
+          currentRoute = ROUTE_CLOUD_BACKUP
+        },
+        onNavigateToUpgrade = {
+          currentRoute = ROUTE_SUBSCRIPTION_PLANS
+        }
+      )
+    }
+
     ROUTE_CLOUD_BACKUP -> {
       CloudBackupScreen(
         viewModel = cloudBackupViewModel,
         onBack = {
-          currentRoute = ROUTE_PROFILE_HUB
+          currentRoute = ROUTE_CLOUD_BACKUP_DASHBOARD
         }
       )
     }

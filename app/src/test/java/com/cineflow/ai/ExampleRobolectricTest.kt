@@ -1091,7 +1091,98 @@ class ExampleRobolectricTest {
     composeTestRule.waitForIdle()
     assertTrue(navigatedBack)
   }
+
+  @Test
+  fun cloudBackupDashboardScreen_displaysReferenceUiFiltersBackupsAndNavigatesToBackupRestoreAndUpgrade() {
+    val dashboardViewModel = com.cineflow.ai.feature.backup.CloudBackupDashboardViewModel()
+    var navigatedBack = false
+    var navigatedToSelectBackup = false
+    var navigatedToUpgrade = false
+
+    composeTestRule.setContent {
+      CineFlowTheme {
+        com.cineflow.ai.feature.backup.CloudBackupDashboardScreen(
+          viewModel = dashboardViewModel,
+          onBack = { navigatedBack = true },
+          onNavigateToSelectBackupData = { navigatedToSelectBackup = true },
+          onNavigateToUpgrade = { navigatedToUpgrade = true }
+        )
+      }
+    }
+
+    composeTestRule.waitForIdle()
+
+    // Verify top hero and back button matching CineFlow AI Cloud Backup Dashboard.png
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_screen").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_top_hero").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_back_button").assertIsDisplayed()
+
+    // Verify Cloud Storage card (2.6 GB of 5 GB Used + Upgrade button)
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_storage_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_storage_usage_text").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_storage_progress_bar").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_upgrade_button").performScrollTo().assertIsDisplayed()
+
+    // Verify 4 filter pills: All (48), Projects (32), Assets (10), Settings (6)
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_filter_row").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_filter_all").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_filter_projects").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_filter_assets").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_filter_settings").performScrollTo().assertIsDisplayed()
+
+    // Verify Back Up to Cloud card & Back Up Now button
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_backup_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_backup_now_button").performScrollTo().assertIsDisplayed()
+
+    // Verify Restore from Cloud card & Restore Now button
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_restore_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_restore_now_button").performScrollTo().assertIsDisplayed()
+
+    // Verify Recent Backups card & 3 recent backup rows
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_recent_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_view_all_button").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_recent_item_0").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_recent_item_1").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_recent_item_2").performScrollTo().assertIsDisplayed()
+
+    // Filter switching updates selectedFilter
+    assertEquals(
+      com.cineflow.ai.feature.backup.BackupDashboardFilter.ALL,
+      dashboardViewModel.selectedFilter.value
+    )
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_filter_projects").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertEquals(
+      com.cineflow.ai.feature.backup.BackupDashboardFilter.PROJECTS,
+      dashboardViewModel.selectedFilter.value
+    )
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_filter_all").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+
+    // Upgrade button triggers onNavigateToUpgrade
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_upgrade_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(navigatedToUpgrade)
+
+    // Back Up Now button triggers onNavigateToSelectBackupData
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_backup_now_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(navigatedToSelectBackup)
+
+    // Restore Now opens Section 12 Manual Restore modal when no external restore callback is provided
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_restore_now_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_status_dialog").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_dialog_close_button").performClick()
+    composeTestRule.waitForIdle()
+
+    // Back button triggers onBack
+    composeTestRule.onNodeWithTag("cloud_backup_dashboard_back_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(navigatedBack)
+  }
 }
+
 
 
 
