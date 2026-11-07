@@ -8,6 +8,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeRight
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.cineflow.ai.core.database.CineFlowDatabase
@@ -1392,32 +1395,60 @@ class ExampleRobolectricTest {
   @Test
   fun splashScreen_displaysLogoBrandNameProgressAndTransitionsToTarget() {
     var splashCompleted = false
+    val progressHistory = mutableListOf<Float>()
+    val initDoneState = androidx.compose.runtime.mutableStateOf(false)
     composeTestRule.mainClock.autoAdvance = false
 
     composeTestRule.setContent {
       CineFlowTheme {
         com.cineflow.ai.feature.onboarding.SplashScreen(
-          durationMillis = 350,
+          isAppInitialized = initDoneState.value,
+          durationMillis = 2000,
+          onProgressUpdated = { progressHistory.add(it) },
           onSplashFinished = { splashCompleted = true }
         )
       }
     }
 
-    composeTestRule.mainClock.advanceTimeBy(120L)
+    composeTestRule.mainClock.advanceTimeByFrame()
 
-    // Verify Splash Screen UI elements: logo container, CineFlow AI logo image, brand title, and progress bar
+    // 1. Progress strictly begins at 0 (0.0f)
+    assertTrue(progressHistory.isNotEmpty())
+    assertEquals(0f, progressHistory.first(), 0.001f)
+
+    // Advance 600ms into the 2000ms minimum splash duration
+    composeTestRule.mainClock.advanceTimeBy(600L)
+
+    // 2. Verify Splash Screen UI elements matching 01_Splash_Screen_Reference.png
     composeTestRule.onNodeWithTag("splash_screen").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("splash_top_wave").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("splash_bottom_wave").assertIsDisplayed()
     composeTestRule.onNodeWithTag("splash_logo_container").assertIsDisplayed()
     composeTestRule.onNodeWithTag("splash_logo_image").assertIsDisplayed()
     composeTestRule.onNodeWithTag("splash_brand_title").assertIsDisplayed()
     composeTestRule.onNodeWithText("CineFlow AI").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("splash_brand_subtitle").assertIsDisplayed()
+    composeTestRule.onNodeWithText("CREATE BEYOND LIMITS").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("splash_tagline_flare").assertIsDisplayed()
     composeTestRule.onNodeWithTag("splash_progress_track").assertIsDisplayed()
     composeTestRule.onNodeWithTag("splash_progress_fill").assertExists()
-    assertFalse(splashCompleted)
 
-    // Resume clock so splash animation completes and triggers onSplashFinished
+    // 3. Minimum 2000ms duration is respected: at 600ms, splash has not finished
+    assertFalse(splashCompleted)
+    assertTrue(progressHistory.last() > 0f && progressHistory.last() < 1f)
+
+    // 4. Advance beyond 2000ms (to 2600ms total) while initialization is still incomplete (false):
+    //    Splash must remain visible, must NOT falsely show 100% completion, and must NOT navigate prematurely
+    composeTestRule.mainClock.advanceTimeBy(2000L)
+    assertFalse(splashCompleted)
+    assertTrue(progressHistory.last() <= 0.925f)
+    composeTestRule.onNodeWithTag("splash_screen").assertIsDisplayed()
+
+    // 5. Mark initialization complete -> progress completes to 100% (1.0f) and onSplashFinished fires
+    initDoneState.value = true
     composeTestRule.mainClock.autoAdvance = true
     composeTestRule.waitForIdle()
+    assertEquals(1f, progressHistory.last(), 0.001f)
     assertTrue(splashCompleted)
   }
 
@@ -1461,31 +1492,92 @@ class ExampleRobolectricTest {
     )
     assertEquals(expectedTitles, onboardingViewModel.pages.map { it.title })
 
-    // Verify Onboarding container, top header, pager, and all 8 page indicators
+    val expectedDrawables = listOf(
+      R.drawable.img_onboarding_01_video_edit,
+      R.drawable.img_onboarding_02_tts,
+      R.drawable.img_onboarding_03_video_to_language,
+      R.drawable.img_onboarding_04_image_to_video,
+      R.drawable.img_onboarding_05_ai_effects,
+      R.drawable.img_onboarding_06_ai_avatar,
+      R.drawable.img_onboarding_07_auto_subtitles,
+      R.drawable.img_onboarding_08_remove_bg
+    )
+    assertEquals(expectedDrawables, onboardingViewModel.pages.map { it.illustrationResId })
+
+    // Verify Onboarding container, top & bottom wave arcs, pager, and all 8 page indicators
     composeTestRule.onNodeWithTag("onboarding_screen").assertIsDisplayed()
     composeTestRule.onNodeWithTag("onboarding_top_header").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("onboarding_bottom_wave").assertIsDisplayed()
     composeTestRule.onNodeWithTag("onboarding_horizontal_pager").assertIsDisplayed()
     composeTestRule.onNodeWithTag("onboarding_page_indicators").assertIsDisplayed()
     for (idx in 0 until 8) {
       composeTestRule.onNodeWithTag("onboarding_indicator_$idx").assertIsDisplayed()
     }
 
+    // Record baseline bounds on Page 0 to verify zero layout shift across all 8 pages
+    val initialIllustrationBounds = composeTestRule
+      .onNodeWithTag("onboarding_illustration_0")
+      .fetchSemanticsNode()
+      .boundsInRoot
+    val initialIndicatorsBounds = composeTestRule
+      .onNodeWithTag("onboarding_page_indicators")
+      .fetchSemanticsNode()
+      .boundsInRoot
+    val initialNavRowBounds = composeTestRule
+      .onNodeWithTag("onboarding_navigation_row")
+      .fetchSemanticsNode()
+      .boundsInRoot
+
     // Page 0 ("Video Edit"): circular illustration, title, description, Previous disabled, Next visible
     assertEquals(0, onboardingViewModel.currentPage.value)
     composeTestRule.onNodeWithTag("onboarding_illustration_0").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("onboarding_illustration_0_image", useUnmergedTree = true).assertIsDisplayed()
     composeTestRule.onNodeWithTag("onboarding_feature_title_0").assertIsDisplayed()
     composeTestRule.onNodeWithText("Video Edit").assertIsDisplayed()
     composeTestRule.onNodeWithTag("onboarding_feature_description_0").assertIsDisplayed()
     composeTestRule.onNodeWithTag("onboarding_next_button").assertIsDisplayed()
 
-    // Step through pages 1..7 via Next button and verify each circular illustration and title
+    // Verify horizontal swipe forward (Page 0 -> Page 1) and backward (Page 1 -> Page 0)
+    composeTestRule.onNodeWithTag("onboarding_horizontal_pager").performTouchInput {
+      swipeLeft()
+    }
+    composeTestRule.waitForIdle()
+    assertEquals(1, onboardingViewModel.currentPage.value)
+    composeTestRule.onNodeWithTag("onboarding_illustration_1").assertIsDisplayed()
+
+    composeTestRule.onNodeWithTag("onboarding_horizontal_pager").performTouchInput {
+      swipeRight()
+    }
+    composeTestRule.waitForIdle()
+    assertEquals(0, onboardingViewModel.currentPage.value)
+
+    // Step through pages 1..7 and verify each circular illustration, title, and consistent layout bounds
     for (expectedPage in 1..7) {
       composeTestRule.onNodeWithTag("onboarding_next_button").performClick()
       composeTestRule.waitForIdle()
       assertEquals(expectedPage, onboardingViewModel.currentPage.value)
       composeTestRule.onNodeWithTag("onboarding_illustration_$expectedPage").assertIsDisplayed()
+      composeTestRule.onNodeWithTag("onboarding_illustration_${expectedPage}_image", useUnmergedTree = true).assertIsDisplayed()
       composeTestRule.onNodeWithTag("onboarding_feature_title_$expectedPage").assertIsDisplayed()
       composeTestRule.onNodeWithText(expectedTitles[expectedPage]).assertIsDisplayed()
+
+      val pageIllustrationBounds = composeTestRule
+        .onNodeWithTag("onboarding_illustration_$expectedPage")
+        .fetchSemanticsNode()
+        .boundsInRoot
+      assertEquals(initialIllustrationBounds.width, pageIllustrationBounds.width, 1f)
+      assertEquals(initialIllustrationBounds.height, pageIllustrationBounds.height, 1f)
+
+      val pageIndicatorsBounds = composeTestRule
+        .onNodeWithTag("onboarding_page_indicators")
+        .fetchSemanticsNode()
+        .boundsInRoot
+      val pageNavRowBounds = composeTestRule
+        .onNodeWithTag("onboarding_navigation_row")
+        .fetchSemanticsNode()
+        .boundsInRoot
+      assertEquals(initialIndicatorsBounds.top, pageIndicatorsBounds.top, 1f)
+      assertEquals(initialNavRowBounds.top, pageNavRowBounds.top, 1f)
     }
 
     // On Page 7 ("Remove BG"): Previous and Get Started are displayed

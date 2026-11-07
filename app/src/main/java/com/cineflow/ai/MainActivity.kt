@@ -105,7 +105,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun CineFlowAppRoot(
   auth: FirebaseAuth = Firebase.auth,
-  splashDurationMillis: Long = 1600L
+  splashDurationMillis: Long = 2000L
 ) {
   val context = LocalContext.current
   val prefs = remember(context) {
@@ -160,12 +160,14 @@ fun CineFlowAppRoot(
   var currentRoute by remember {
     mutableStateOf(ROUTE_SPLASH)
   }
+  var isAppInitialized by remember { mutableStateOf(false) }
   var activeEditorProject by remember { mutableStateOf<VideoProject?>(null) }
   var publicUid by remember { mutableStateOf<String?>(null) }
 
   LaunchedEffect(Unit) {
     onboardingViewModel.syncCompletionFromStorage(OnboardingPreferences.isOnboardingCompleted(context))
     localProjectRepository.seedDemoProjectsIfEmpty()
+    isAppInitialized = true
   }
 
   val signedInUser = currentUser
@@ -211,6 +213,7 @@ fun CineFlowAppRoot(
   when (currentRoute) {
     ROUTE_SPLASH -> {
       SplashScreen(
+        isAppInitialized = isAppInitialized,
         durationMillis = splashDurationMillis.toInt(),
         onSplashFinished = {
           val onboardingDone = OnboardingPreferences.isOnboardingCompleted(context)
