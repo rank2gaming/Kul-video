@@ -1181,7 +1181,558 @@ class ExampleRobolectricTest {
     composeTestRule.waitForIdle()
     assertTrue(navigatedBack)
   }
+
+  @Test
+  fun cloudRestoreScreen_displaysReferenceUiSelectsSnapshotsAndContentAndEnforcesSafeManualRestore() {
+    val restoreViewModel = com.cineflow.ai.feature.backup.CloudRestoreViewModel()
+    var navigatedBack = false
+
+    composeTestRule.setContent {
+      CineFlowTheme {
+        com.cineflow.ai.feature.backup.CloudRestoreScreen(
+          viewModel = restoreViewModel,
+          onBack = { navigatedBack = true }
+        )
+      }
+    }
+
+    composeTestRule.waitForIdle()
+
+    // Verify top hero and back button matching CineFlow AI Cloud Restore Interface.png
+    composeTestRule.onNodeWithTag("cloud_restore_screen").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_restore_top_hero").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_restore_back_button").assertIsDisplayed()
+
+    // Verify Available Backups card & 4 backup snapshot rows
+    composeTestRule.onNodeWithTag("cloud_restore_available_backups_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_restore_backups_count_label", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_restore_backup_row_0").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_restore_recommended_badge", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_restore_backup_row_1").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_restore_backup_row_2").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_restore_backup_row_3").performScrollTo().assertIsDisplayed()
+
+    // Verify Restore Content card & 4 content category rows
+    composeTestRule.onNodeWithTag("cloud_restore_content_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_restore_content_projects").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_restore_content_media_assets").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_restore_content_app_data").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_restore_content_ai_assets").performScrollTo().assertIsDisplayed()
+
+    // Verify Restore Summary card & 3 metrics (Selected Items, Total Size, Device Storage)
+    composeTestRule.onNodeWithTag("cloud_restore_summary_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_restore_summary_selected_items").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_restore_summary_total_size").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_restore_summary_device_storage").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_restore_now_button").performScrollTo().assertIsDisplayed()
+
+    // Initial selection matches reference image: Latest Backup, 3 of 4 content categories = 5.23 GB
+    assertEquals("restore_latest_01", restoreViewModel.selectedSnapshotId.value)
+    assertEquals(3, restoreViewModel.selectedContentCount())
+    assertEquals(4, restoreViewModel.totalContentCategoriesCount)
+    assertEquals("5.23 GB", restoreViewModel.formattedTotalRestoreSizeGb())
+
+    // Selecting Manual Backup (2.98 GB) updates selected snapshot and scaled total size
+    composeTestRule.onNodeWithTag("cloud_restore_backup_row_2").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertEquals("restore_manual_03", restoreViewModel.selectedSnapshotId.value)
+    assertEquals("2.98 GB", restoreViewModel.formattedTotalRestoreSizeGb())
+
+    // Switch back to Latest Backup
+    composeTestRule.onNodeWithTag("cloud_restore_backup_row_0").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertEquals("restore_latest_01", restoreViewModel.selectedSnapshotId.value)
+    assertEquals("5.23 GB", restoreViewModel.formattedTotalRestoreSizeGb())
+
+    // Toggling AI Assets adds 0.50 GB -> 4 of 4 selected (5.73 GB)
+    composeTestRule.onNodeWithTag("cloud_restore_content_ai_assets").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertEquals(4, restoreViewModel.selectedContentCount())
+    assertEquals("5.73 GB", restoreViewModel.formattedTotalRestoreSizeGb())
+
+    // Toggling AI Assets back off -> 3 of 4 selected (5.23 GB)
+    composeTestRule.onNodeWithTag("cloud_restore_content_ai_assets").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertEquals(3, restoreViewModel.selectedContentCount())
+    assertEquals("5.23 GB", restoreViewModel.formattedTotalRestoreSizeGb())
+
+    // Clicking Restore Now executes Section 12 safe manual restore and displays verification dialog
+    composeTestRule.onNodeWithTag("cloud_restore_now_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("cloud_restore_status_dialog").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("cloud_restore_dialog_close_button").performClick()
+    composeTestRule.waitForIdle()
+
+    // Back button works
+    composeTestRule.onNodeWithTag("cloud_restore_back_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(navigatedBack)
+  }
+
+  @Test
+  fun settingsScreen_displaysReferenceUiTogglesControlsAndNavigatesToCloudAndSubscription() {
+    val settingsViewModel = com.cineflow.ai.feature.settings.SettingsViewModel()
+    var navigatedBack = false
+    var navigatedToCloudBackup = false
+    var navigatedToSubscription = false
+
+    composeTestRule.setContent {
+      CineFlowTheme {
+        com.cineflow.ai.feature.settings.SettingsScreen(
+          viewModel = settingsViewModel,
+          onBack = { navigatedBack = true },
+          onNavigateToCloudBackup = { navigatedToCloudBackup = true },
+          onNavigateToSubscriptionPlan = { navigatedToSubscription = true }
+        )
+      }
+    }
+
+    composeTestRule.waitForIdle()
+
+    // Verify top hero and back button matching CineFlow AI Neon Settings Dashboard.png
+    composeTestRule.onNodeWithTag("settings_screen").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_top_hero").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_back_button").assertIsDisplayed()
+
+    // Verify Section 1: General card & rows
+    composeTestRule.onNodeWithTag("settings_section_general").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_card_general").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_row_app_language").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_row_appearance").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_appearance_light").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_appearance_dark").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_appearance_system").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_row_haptic_feedback").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_switch_haptic", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_row_notifications").performScrollTo().assertIsDisplayed()
+
+    // Verify Section 2: Editing card & 5 rows
+    composeTestRule.onNodeWithTag("settings_section_editing").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_card_editing").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_row_preview_quality").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_row_default_resolution").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_row_default_fps").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_row_default_codec").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_row_default_bitrate").performScrollTo().assertIsDisplayed()
+
+    // Verify Section 3: Project & Storage card & 4 rows
+    composeTestRule.onNodeWithTag("settings_section_project_storage").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_card_project_storage").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_row_auto_save").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_switch_auto_save", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_row_project_recovery").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_row_cache_management").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_cache_size_label", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_row_storage_location").performScrollTo().assertIsDisplayed()
+
+    // Verify Section 4: Cloud & Account card & 3 rows
+    composeTestRule.onNodeWithTag("settings_section_cloud_account").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_card_cloud_account").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_row_cloud_backup").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_row_subscription_plan").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_plan_badge", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_row_account_security").performScrollTo().assertIsDisplayed()
+
+    // Verify Standalone AI Settings and About cards
+    composeTestRule.onNodeWithTag("settings_card_ai_settings").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_card_about").performScrollTo().assertIsDisplayed()
+
+    // Verify default values matching reference screenshot
+    assertEquals("English", settingsViewModel.appLanguage.value)
+    assertEquals(com.cineflow.ai.feature.settings.SettingsAppearance.DARK, settingsViewModel.appearance.value)
+    assertTrue(settingsViewModel.hapticFeedbackEnabled.value)
+    assertEquals("High (Recommended)", settingsViewModel.previewQuality.value)
+    assertEquals("1080p (Full HD)", settingsViewModel.defaultExportResolution.value)
+    assertEquals("30 FPS", settingsViewModel.defaultFps.value)
+    assertEquals("H.265 (HEVC)", settingsViewModel.defaultVideoCodec.value)
+    assertEquals("High", settingsViewModel.defaultBitrate.value)
+    assertTrue(settingsViewModel.autoSaveEnabled.value)
+    assertEquals("2.1 GB", settingsViewModel.cacheSizeLabel.value)
+    assertEquals("Internal Storage", settingsViewModel.storageLocation.value)
+    assertEquals("5 GB Plan", settingsViewModel.planBadgeLabel.value)
+
+    // Switch Appearance to System, then back to Dark
+    composeTestRule.onNodeWithTag("settings_appearance_system").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertEquals(com.cineflow.ai.feature.settings.SettingsAppearance.SYSTEM, settingsViewModel.appearance.value)
+    composeTestRule.onNodeWithTag("settings_appearance_dark").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertEquals(com.cineflow.ai.feature.settings.SettingsAppearance.DARK, settingsViewModel.appearance.value)
+
+    // Toggle Haptic Feedback off and back on
+    composeTestRule.onNodeWithTag("settings_row_haptic_feedback").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertFalse(settingsViewModel.hapticFeedbackEnabled.value)
+    composeTestRule.onNodeWithTag("settings_row_haptic_feedback").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(settingsViewModel.hapticFeedbackEnabled.value)
+
+    // Cloud Backup & Subscription rows trigger navigation callbacks
+    composeTestRule.onNodeWithTag("settings_row_cloud_backup").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(navigatedToCloudBackup)
+
+    composeTestRule.onNodeWithTag("settings_row_subscription_plan").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(navigatedToSubscription)
+
+    // AI Settings & About open their dialogs
+    composeTestRule.onNodeWithTag("settings_card_ai_settings").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("settings_status_dialog").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("settings_dialog_close_button").performClick()
+    composeTestRule.waitForIdle()
+
+    // Back button works
+    composeTestRule.onNodeWithTag("settings_back_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(navigatedBack)
+  }
+
+  @Test
+  fun splashScreen_displaysLogoBrandNameProgressAndTransitionsToTarget() {
+    var splashCompleted = false
+    composeTestRule.mainClock.autoAdvance = false
+
+    composeTestRule.setContent {
+      CineFlowTheme {
+        com.cineflow.ai.feature.onboarding.SplashScreen(
+          durationMillis = 350,
+          onSplashFinished = { splashCompleted = true }
+        )
+      }
+    }
+
+    composeTestRule.mainClock.advanceTimeBy(120L)
+
+    // Verify Splash Screen UI elements: logo container, CineFlow AI logo image, brand title, and progress bar
+    composeTestRule.onNodeWithTag("splash_screen").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("splash_logo_container").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("splash_logo_image").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("splash_brand_title").assertIsDisplayed()
+    composeTestRule.onNodeWithText("CineFlow AI").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("splash_progress_track").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("splash_progress_fill").assertExists()
+    assertFalse(splashCompleted)
+
+    // Resume clock so splash animation completes and triggers onSplashFinished
+    composeTestRule.mainClock.autoAdvance = true
+    composeTestRule.waitForIdle()
+    assertTrue(splashCompleted)
+  }
+
+  @Test
+  fun onboardingScreen_displaysEightCircularFeaturePagesSynchronizesIndicatorsAndSavesCompletion() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    com.cineflow.ai.feature.onboarding.OnboardingPreferences.setOnboardingCompleted(context, false)
+    assertFalse(com.cineflow.ai.feature.onboarding.OnboardingPreferences.isOnboardingCompleted(context))
+
+    val onboardingViewModel = com.cineflow.ai.feature.onboarding.OnboardingViewModel()
+    var getStartedClicked = false
+
+    composeTestRule.setContent {
+      CineFlowTheme {
+        com.cineflow.ai.feature.onboarding.OnboardingScreen(
+          viewModel = onboardingViewModel,
+          onGetStarted = {
+            com.cineflow.ai.feature.onboarding.OnboardingPreferences.setOnboardingCompleted(context, true)
+            onboardingViewModel.completeOnboarding()
+            getStartedClicked = true
+          }
+        )
+      }
+    }
+
+    composeTestRule.waitForIdle()
+
+    // Strictly 8 pages — More Tools is NOT included as a 9th page
+    assertEquals(8, onboardingViewModel.pages.size)
+    assertFalse(onboardingViewModel.pages.any { it.title.contains("More Tools", ignoreCase = true) })
+
+    val expectedTitles = listOf(
+      "Video Edit",
+      "Text-to-Speech",
+      "Video-to-Language",
+      "Image to Video",
+      "AI Effects",
+      "AI Avatar",
+      "Auto Subtitles",
+      "Remove BG"
+    )
+    assertEquals(expectedTitles, onboardingViewModel.pages.map { it.title })
+
+    // Verify Onboarding container, top header, pager, and all 8 page indicators
+    composeTestRule.onNodeWithTag("onboarding_screen").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("onboarding_top_header").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("onboarding_horizontal_pager").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("onboarding_page_indicators").assertIsDisplayed()
+    for (idx in 0 until 8) {
+      composeTestRule.onNodeWithTag("onboarding_indicator_$idx").assertIsDisplayed()
+    }
+
+    // Page 0 ("Video Edit"): circular illustration, title, description, Previous disabled, Next visible
+    assertEquals(0, onboardingViewModel.currentPage.value)
+    composeTestRule.onNodeWithTag("onboarding_illustration_0").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("onboarding_feature_title_0").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Video Edit").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("onboarding_feature_description_0").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("onboarding_next_button").assertIsDisplayed()
+
+    // Step through pages 1..7 via Next button and verify each circular illustration and title
+    for (expectedPage in 1..7) {
+      composeTestRule.onNodeWithTag("onboarding_next_button").performClick()
+      composeTestRule.waitForIdle()
+      assertEquals(expectedPage, onboardingViewModel.currentPage.value)
+      composeTestRule.onNodeWithTag("onboarding_illustration_$expectedPage").assertIsDisplayed()
+      composeTestRule.onNodeWithTag("onboarding_feature_title_$expectedPage").assertIsDisplayed()
+      composeTestRule.onNodeWithText(expectedTitles[expectedPage]).assertIsDisplayed()
+    }
+
+    // On Page 7 ("Remove BG"): Previous and Get Started are displayed
+    composeTestRule.onNodeWithTag("onboarding_previous_button").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("onboarding_get_started_button").assertIsDisplayed()
+
+    // Clicking Previous on Page 7 returns to Page 6 ("Auto Subtitles")
+    composeTestRule.onNodeWithTag("onboarding_previous_button").performClick()
+    composeTestRule.waitForIdle()
+    assertEquals(6, onboardingViewModel.currentPage.value)
+    composeTestRule.onNodeWithText("Auto Subtitles").assertIsDisplayed()
+
+    // Clicking Next returns to Page 7 ("Remove BG")
+    composeTestRule.onNodeWithTag("onboarding_next_button").performClick()
+    composeTestRule.waitForIdle()
+    assertEquals(7, onboardingViewModel.currentPage.value)
+
+    // Clicking Get Started saves onboarding completion locally and triggers callback
+    composeTestRule.onNodeWithTag("onboarding_get_started_button").performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(getStartedClicked)
+    assertTrue(onboardingViewModel.isOnboardingCompleted.value)
+    assertTrue(com.cineflow.ai.feature.onboarding.OnboardingPreferences.isOnboardingCompleted(context))
+  }
+
+  @Test
+  fun startupAndProfileNavigation_enforcesSplashOnboardingHomeAndManualProfileToLoginFlow() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    com.cineflow.ai.feature.onboarding.OnboardingPreferences.setOnboardingCompleted(context, false)
+    assertFalse(com.cineflow.ai.feature.onboarding.OnboardingPreferences.isOnboardingCompleted(context))
+
+    val onboardingViewModel = com.cineflow.ai.feature.onboarding.OnboardingViewModel()
+    val homeViewModel = HomeDashboardViewModel(repository)
+    val loginViewModel = com.cineflow.ai.feature.auth.LoginViewModel()
+    val profileHubViewModel = com.cineflow.ai.feature.auth.ProfileHubViewModel()
+
+    composeTestRule.mainClock.autoAdvance = false
+
+    composeTestRule.setContent {
+      CineFlowTheme {
+        val routeState = androidx.compose.runtime.remember {
+          androidx.compose.runtime.mutableStateOf(com.cineflow.ai.feature.onboarding.ROUTE_SPLASH)
+        }
+        val isSignedInState = androidx.compose.runtime.remember {
+          androidx.compose.runtime.mutableStateOf(false)
+        }
+
+        when (routeState.value) {
+          com.cineflow.ai.feature.onboarding.ROUTE_SPLASH -> {
+            com.cineflow.ai.feature.onboarding.SplashScreen(
+              durationMillis = 350,
+              onSplashFinished = {
+                routeState.value = if (com.cineflow.ai.feature.onboarding.OnboardingPreferences.isOnboardingCompleted(context)) {
+                  com.cineflow.ai.feature.home.ROUTE_HOME_DASHBOARD
+                } else {
+                  com.cineflow.ai.feature.onboarding.ROUTE_ONBOARDING
+                }
+              }
+            )
+          }
+          com.cineflow.ai.feature.onboarding.ROUTE_ONBOARDING -> {
+            com.cineflow.ai.feature.onboarding.OnboardingScreen(
+              viewModel = onboardingViewModel,
+              onGetStarted = {
+                com.cineflow.ai.feature.onboarding.OnboardingPreferences.setOnboardingCompleted(context, true)
+                routeState.value = com.cineflow.ai.feature.home.ROUTE_HOME_DASHBOARD
+              }
+            )
+          }
+          com.cineflow.ai.feature.home.ROUTE_HOME_DASHBOARD -> {
+            HomeDashboardScreen(
+              viewModel = homeViewModel,
+              isSignedIn = isSignedInState.value,
+              currentUserEmail = if (isSignedInState.value) "creator@cineflow.ai" else null,
+              publicUid = if (isSignedInState.value) "CF00000108" else null,
+              onNavigateToVideoEdit = {},
+              onAuthChanged = {},
+              onNavigateToProfileHub = {
+                routeState.value = if (isSignedInState.value) {
+                  com.cineflow.ai.feature.auth.ROUTE_PROFILE_HUB
+                } else {
+                  com.cineflow.ai.feature.auth.ROUTE_LOGIN
+                }
+              }
+            )
+          }
+          com.cineflow.ai.feature.auth.ROUTE_LOGIN -> {
+            com.cineflow.ai.feature.auth.LoginScreen(
+              viewModel = loginViewModel,
+              onLoginSuccess = {
+                isSignedInState.value = true
+                routeState.value = com.cineflow.ai.feature.home.ROUTE_HOME_DASHBOARD
+              },
+              onSkipToHome = {
+                routeState.value = com.cineflow.ai.feature.home.ROUTE_HOME_DASHBOARD
+              }
+            )
+          }
+          com.cineflow.ai.feature.auth.ROUTE_PROFILE_HUB -> {
+            com.cineflow.ai.feature.auth.ProfileHubScreen(
+              viewModel = profileHubViewModel,
+              onBack = { routeState.value = com.cineflow.ai.feature.home.ROUTE_HOME_DASHBOARD },
+              onLogOut = {
+                isSignedInState.value = false
+                routeState.value = com.cineflow.ai.feature.auth.ROUTE_LOGIN
+              }
+            )
+          }
+        }
+      }
+    }
+
+    // 1. First Launch: Starts on Splash Screen, then automatically transitions to Onboarding (NOT Login!)
+    composeTestRule.mainClock.advanceTimeBy(120L)
+    composeTestRule.onNodeWithTag("splash_screen").assertIsDisplayed()
+    composeTestRule.mainClock.autoAdvance = true
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("onboarding_screen").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("login_screen").assertDoesNotExist()
+
+    // 2. Navigate to final onboarding page and tap Get Started -> opens Home Dashboard directly
+    repeat(7) {
+      composeTestRule.onNodeWithTag("onboarding_next_button").performClick()
+      composeTestRule.waitForIdle()
+    }
+    composeTestRule.onNodeWithTag("onboarding_get_started_button").performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("home_dashboard_screen").assertIsDisplayed()
+    assertTrue(com.cineflow.ai.feature.onboarding.OnboardingPreferences.isOnboardingCompleted(context))
+
+    // 3. Unauthenticated User taps Profile icon on Home Dashboard -> opens Login Screen
+    composeTestRule.onNodeWithTag("home_profile_avatar_button").performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("login_screen").assertIsDisplayed()
+
+    // 4. User logs in on Login Screen -> returns to Home Dashboard as authenticated user
+    loginViewModel.onEmailChange("creator@cineflow.ai")
+    loginViewModel.onPasswordChange("CineFlow2026")
+    composeTestRule.onNodeWithTag("login_submit_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("home_dashboard_screen").assertIsDisplayed()
+
+    // 5. Authenticated User taps Profile icon on Home Dashboard -> opens Profile Hub Screen
+    composeTestRule.onNodeWithTag("home_profile_avatar_button").performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("profile_hub_top_banner").assertIsDisplayed()
+  }
+
+  @Test
+  fun notificationCenterScreen_displaysReferenceUiFiltersCategoriesMarksAllReadAndTogglesSettings() {
+    val notifViewModel = com.cineflow.ai.feature.notifications.NotificationCenterViewModel()
+    var navigatedBack = false
+
+    composeTestRule.setContent {
+      CineFlowTheme {
+        com.cineflow.ai.feature.notifications.NotificationCenterScreen(
+          viewModel = notifViewModel,
+          onBack = { navigatedBack = true }
+        )
+      }
+    }
+
+    composeTestRule.waitForIdle()
+
+    // Verify top hero and back button matching CineFlow AI Notification Center.png
+    composeTestRule.onNodeWithTag("notification_center_screen").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_center_top_hero").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_center_back_button").assertIsDisplayed()
+
+    // Verify 5-category filter bar (All, Account, Projects, Backup, Subscription)
+    composeTestRule.onNodeWithTag("notification_center_filter_bar").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_filter_all").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_filter_account").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_filter_projects").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_filter_backup").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_filter_subscription").performScrollTo().assertIsDisplayed()
+
+    // Verify Recent Notifications section header, Mark All as Read, all 5 notification items, and View All Notifications button
+    composeTestRule.onNodeWithTag("notification_recent_header").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_mark_all_read_button").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_item_0").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_item_1").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_item_2").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_item_3").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_item_4").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_view_all_button").performScrollTo().assertIsDisplayed()
+
+    // Verify Notification Settings card and 4 toggle rows
+    composeTestRule.onNodeWithTag("notification_settings_card").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_setting_app_row").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_switch_app", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_setting_backup_row").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_switch_backup", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_setting_subscription_row").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_switch_subscription", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_setting_account_row").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_switch_account", useUnmergedTree = true).assertIsDisplayed()
+
+    // Initial state: 5 notifications total, 3 unread
+    assertEquals(5, notifViewModel.notifications.value.size)
+    assertEquals(3, notifViewModel.unreadCount())
+
+    // Filter by PROJECTS -> 2 notifications ("Export Completed", "Project Synced")
+    composeTestRule.onNodeWithTag("notification_filter_projects").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertEquals(
+      com.cineflow.ai.feature.notifications.NotificationCategoryFilter.PROJECTS,
+      notifViewModel.selectedFilter.value
+    )
+    assertEquals(2, notifViewModel.filteredNotifications().size)
+
+    // Switch back to ALL -> 5 notifications
+    composeTestRule.onNodeWithTag("notification_filter_all").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertEquals(5, notifViewModel.filteredNotifications().size)
+
+    // Clicking "Mark All as Read" marks all 5 notifications read (0 unread)
+    composeTestRule.onNodeWithTag("notification_mark_all_read_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertEquals(0, notifViewModel.unreadCount())
+
+    // Clicking "View All Notifications" opens the modal dialog
+    composeTestRule.onNodeWithTag("notification_view_all_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("notification_status_dialog").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("notification_dialog_close_button").performClick()
+    composeTestRule.waitForIdle()
+
+    // Toggling Notification Settings switches updates state
+    assertTrue(notifViewModel.appNotificationsEnabled.value)
+    composeTestRule.onNodeWithTag("notification_setting_app_row").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertFalse(notifViewModel.appNotificationsEnabled.value)
+    composeTestRule.onNodeWithTag("notification_setting_app_row").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(notifViewModel.appNotificationsEnabled.value)
+
+    // Back button works
+    composeTestRule.onNodeWithTag("notification_center_back_button").performScrollTo().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue(navigatedBack)
+  }
 }
+
+
+
+
 
 
 
