@@ -6,15 +6,22 @@ const crypto = require('crypto');
 
 const PORT = 3000;
 const PUBLIC_DIR = __dirname;
-const APK_PATH = path.join(PUBLIC_DIR, 'CineFlow-AI-debug.apk');
+const LOCAL_APK_PATH = path.join(PUBLIC_DIR, 'CineFlow-AI-debug.apk');
+const BUILD_APK_PATH = path.join(PUBLIC_DIR, '..', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk');
+
+function resolveApkPath() {
+  if (fs.existsSync(LOCAL_APK_PATH)) return LOCAL_APK_PATH;
+  return BUILD_APK_PATH;
+}
 
 let cachedMtimeMs = 0;
 let cachedSha256 = '';
 
 function getApkMeta() {
-  const stat = fs.statSync(APK_PATH);
+  const apkPath = resolveApkPath();
+  const stat = fs.statSync(apkPath);
   if (stat.mtimeMs !== cachedMtimeMs || !cachedSha256) {
-    const buf = fs.readFileSync(APK_PATH);
+    const buf = fs.readFileSync(apkPath);
     cachedSha256 = crypto.createHash('sha256').update(buf).digest('hex');
     cachedMtimeMs = stat.mtimeMs;
   }
@@ -53,7 +60,7 @@ const server = http.createServer((req, res) => {
 
   // 2. Explicit 4MB chunk endpoint (bypasses Cloud Run 32MB single-response limit)
   if (pathname === '/api/apk-chunk') {
-    const stat = fs.statSync(APK_PATH);
+    const stat = fs.statSync(resolveApkPath());
     const total = stat.size;
     const start = Math.max(0, parseInt(parsedUrl.query.start || '0', 10));
     const end = Math.min(total - 1, parseInt(parsedUrl.query.end || String(total - 1), 10));
@@ -70,13 +77,13 @@ const server = http.createServer((req, res) => {
       'Content-Length': chunkLength,
       'Cache-Control': 'no-store'
     });
-    fs.createReadStream(APK_PATH, { start, end }).pipe(res);
+    fs.createReadStream(resolveApkPath(), { start, end }).pipe(res);
     return;
   }
 
   // 3. Direct APK request with HTTP Range support + landing page fallback for HTML navigation
   if (pathname === '/CineFlow-AI-debug.apk' || pathname === '/app-debug.apk') {
-    const stat = fs.statSync(APK_PATH);
+    const stat = fs.statSync(resolveApkPath());
     const total = stat.size;
     const rangeHeader = req.headers.range;
     const acceptHeader = req.headers.accept || '';
@@ -116,7 +123,7 @@ const server = http.createServer((req, res) => {
         res.end();
         return;
       }
-      fs.createReadStream(APK_PATH, { start, end }).pipe(res);
+      fs.createReadStream(resolveApkPath(), { start, end }).pipe(res);
       return;
     }
 
@@ -130,7 +137,7 @@ const server = http.createServer((req, res) => {
       res.end();
       return;
     }
-    fs.createReadStream(APK_PATH).pipe(res);
+    fs.createReadStream(resolveApkPath()).pipe(res);
     return;
   }
 
