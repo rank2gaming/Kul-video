@@ -46,11 +46,8 @@ import com.cineflow.ai.feature.backup.CloudBackupDashboardScreen
 import com.cineflow.ai.feature.backup.CloudBackupDashboardViewModel
 import com.cineflow.ai.feature.backup.CloudBackupScreen
 import com.cineflow.ai.feature.backup.CloudBackupViewModel
-import com.cineflow.ai.feature.backup.CloudRestoreScreen
-import com.cineflow.ai.feature.backup.CloudRestoreViewModel
 import com.cineflow.ai.feature.backup.ROUTE_CLOUD_BACKUP
 import com.cineflow.ai.feature.backup.ROUTE_CLOUD_BACKUP_DASHBOARD
-import com.cineflow.ai.feature.backup.ROUTE_CLOUD_RESTORE
 import com.cineflow.ai.feature.editor.VideoEditorScreen
 import com.cineflow.ai.feature.editor.VideoEditorViewModel
 import com.cineflow.ai.feature.export.ExportVideoScreen
@@ -60,23 +57,11 @@ import com.cineflow.ai.feature.home.HomeDashboardScreen
 import com.cineflow.ai.feature.home.HomeDashboardViewModel
 import com.cineflow.ai.feature.home.ROUTE_HOME_DASHBOARD
 import com.cineflow.ai.feature.home.ROUTE_PROJECT_MANAGEMENT
-import com.cineflow.ai.feature.notifications.NotificationCenterScreen
-import com.cineflow.ai.feature.notifications.NotificationCenterViewModel
-import com.cineflow.ai.feature.notifications.ROUTE_NOTIFICATION_CENTER
-import com.cineflow.ai.feature.onboarding.OnboardingPreferences
-import com.cineflow.ai.feature.onboarding.OnboardingScreen
-import com.cineflow.ai.feature.onboarding.OnboardingViewModel
-import com.cineflow.ai.feature.onboarding.ROUTE_ONBOARDING
-import com.cineflow.ai.feature.onboarding.ROUTE_SPLASH
-import com.cineflow.ai.feature.onboarding.SplashScreen
 import com.cineflow.ai.feature.projects.CreateNewProjectScreen
 import com.cineflow.ai.feature.projects.ProjectManagementScreen
 import com.cineflow.ai.feature.projects.ProjectManagementViewModel
 import com.cineflow.ai.feature.projects.ROUTE_CREATE_NEW_PROJECT
 import com.cineflow.ai.feature.projects.ROUTE_EDITOR_BOUNDARY
-import com.cineflow.ai.feature.settings.ROUTE_SETTINGS
-import com.cineflow.ai.feature.settings.SettingsScreen
-import com.cineflow.ai.feature.settings.SettingsViewModel
 import com.cineflow.ai.ui.theme.CineFlowTheme
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -103,10 +88,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun CineFlowAppRoot(
-  auth: FirebaseAuth = Firebase.auth,
-  splashDurationMillis: Long = 2000L
-) {
+fun CineFlowAppRoot(auth: FirebaseAuth = Firebase.auth) {
   val context = LocalContext.current
   val prefs = remember(context) {
     context.getSharedPreferences(PROFILE_SETUP_PREFS, Context.MODE_PRIVATE)
@@ -115,7 +97,6 @@ fun CineFlowAppRoot(
   val localProjectRepository = remember(database) {
     LocalProjectRepository(database.localProjectDao())
   }
-  val onboardingViewModel: OnboardingViewModel = viewModel()
   val loginViewModel: LoginViewModel = viewModel()
   val signUpViewModel: SignUpViewModel = viewModel()
   val accountRecoveryViewModel: AccountRecoveryViewModel = viewModel()
@@ -125,9 +106,6 @@ fun CineFlowAppRoot(
   val subscriptionPlansViewModel: SubscriptionPlansViewModel = viewModel()
   val cloudBackupDashboardViewModel: CloudBackupDashboardViewModel = viewModel()
   val cloudBackupViewModel: CloudBackupViewModel = viewModel()
-  val cloudRestoreViewModel: CloudRestoreViewModel = viewModel()
-  val settingsViewModel: SettingsViewModel = viewModel()
-  val notificationCenterViewModel: NotificationCenterViewModel = viewModel()
   val homeViewModel: HomeDashboardViewModel = viewModel(
     factory = HomeDashboardViewModel.provideFactory(localProjectRepository)
   )
@@ -151,23 +129,27 @@ fun CineFlowAppRoot(
   val wasGoogleProfilePreviouslyCompleted = initialGoogleUid != null &&
     prefs.getBoolean("profile_setup_completed_$initialGoogleUid", false)
 
-  // Startup & Login Navigation Requirements:
-  // - Application always begins at the Animated Splash Screen (`ROUTE_SPLASH`).
-  // - First launch: Splash Screen -> Onboarding Screen -> Home Dashboard.
-  // - Subsequent launches: Splash Screen -> Home Dashboard.
-  // - Login Screen never opens automatically during application startup; it opens when the user
-  //   manually taps Profile while unauthenticated.
+  // Section 9 & 10:
+  // - Unsigned user -> starts on Login Screen (`ROUTE_LOGIN`)
+  // - Google Sign-In user who has NOT completed Profile Setup -> MUST go to `ROUTE_PROFILE_COMPLETION`
+  // - Google Sign-In user who HAS completed Profile Setup -> goes to `ROUTE_HOME_DASHBOARD`
   var currentRoute by remember {
-    mutableStateOf(ROUTE_SPLASH)
+    mutableStateOf(
+      when {
+        initialGoogleUid == null -> ROUTE_LOGIN
+        wasGoogleProfilePreviouslyCompleted -> ROUTE_HOME_DASHBOARD
+        else -> {
+          profileCompletionViewModel.prepareForGoogleSignIn()
+          ROUTE_PROFILE_COMPLETION
+        }
+      }
+    )
   }
-  var isAppInitialized by remember { mutableStateOf(false) }
   var activeEditorProject by remember { mutableStateOf<VideoProject?>(null) }
   var publicUid by remember { mutableStateOf<String?>(null) }
 
   LaunchedEffect(Unit) {
-    onboardingViewModel.syncCompletionFromStorage(OnboardingPreferences.isOnboardingCompleted(context))
     localProjectRepository.seedDemoProjectsIfEmpty()
-    isAppInitialized = true
   }
 
   val signedInUser = currentUser
@@ -211,41 +193,6 @@ fun CineFlowAppRoot(
   }
 
   when (currentRoute) {
-    ROUTE_SPLASH -> {
-      SplashScreen(
-        isAppInitialized = isAppInitialized,
-        durationMillis = splashDurationMillis.toInt(),
-        onSplashFinished = {
-          val onboardingDone = OnboardingPreferences.isOnboardingCompleted(context)
-          onboardingViewModel.syncCompletionFromStorage(onboardingDone)
-          currentRoute = when {
-            !onboardingDone -> ROUTE_ONBOARDING
-            initialGoogleUid != null && !wasGoogleProfilePreviouslyCompleted -> {
-              profileCompletionViewModel.prepareForGoogleSignIn()
-              ROUTE_PROFILE_COMPLETION
-            }
-            else -> ROUTE_HOME_DASHBOARD
-          }
-        }
-      )
-    }
-
-    ROUTE_ONBOARDING -> {
-      OnboardingScreen(
-        viewModel = onboardingViewModel,
-        onGetStarted = {
-          OnboardingPreferences.setOnboardingCompleted(context, true)
-          onboardingViewModel.completeOnboarding()
-          currentRoute = if (initialGoogleUid != null && !wasGoogleProfilePreviouslyCompleted) {
-            profileCompletionViewModel.prepareForGoogleSignIn()
-            ROUTE_PROFILE_COMPLETION
-          } else {
-            ROUTE_HOME_DASHBOARD
-          }
-        }
-      )
-    }
-
     ROUTE_LOGIN -> {
       LoginScreen(
         viewModel = loginViewModel,
@@ -381,9 +328,6 @@ fun CineFlowAppRoot(
             ProfileHubSection.CLOUD_BACKUP_RESTORE -> {
               currentRoute = ROUTE_CLOUD_BACKUP_DASHBOARD
             }
-            ProfileHubSection.ACCOUNT_SETTINGS -> {
-              currentRoute = ROUTE_SETTINGS
-            }
             else -> {
               profileHubViewModel.openSection(section)
             }
@@ -426,9 +370,6 @@ fun CineFlowAppRoot(
         onNavigateToSelectBackupData = {
           currentRoute = ROUTE_CLOUD_BACKUP
         },
-        onNavigateToRestore = {
-          currentRoute = ROUTE_CLOUD_RESTORE
-        },
         onNavigateToUpgrade = {
           currentRoute = ROUTE_SUBSCRIPTION_PLANS
         }
@@ -440,42 +381,6 @@ fun CineFlowAppRoot(
         viewModel = cloudBackupViewModel,
         onBack = {
           currentRoute = ROUTE_CLOUD_BACKUP_DASHBOARD
-        }
-      )
-    }
-
-    ROUTE_CLOUD_RESTORE -> {
-      CloudRestoreScreen(
-        viewModel = cloudRestoreViewModel,
-        onBack = {
-          currentRoute = ROUTE_CLOUD_BACKUP_DASHBOARD
-        }
-      )
-    }
-
-    ROUTE_SETTINGS -> {
-      SettingsScreen(
-        viewModel = settingsViewModel,
-        onBack = {
-          currentRoute = ROUTE_HOME_DASHBOARD
-        },
-        onNavigateToCloudBackup = {
-          currentRoute = ROUTE_CLOUD_BACKUP_DASHBOARD
-        },
-        onNavigateToSubscriptionPlan = {
-          currentRoute = ROUTE_SUBSCRIPTION_PLANS
-        },
-        onNavigateToNotifications = {
-          currentRoute = ROUTE_NOTIFICATION_CENTER
-        }
-      )
-    }
-
-    ROUTE_NOTIFICATION_CENTER -> {
-      NotificationCenterScreen(
-        viewModel = notificationCenterViewModel,
-        onBack = {
-          currentRoute = ROUTE_HOME_DASHBOARD
         }
       )
     }
@@ -501,29 +406,16 @@ fun CineFlowAppRoot(
           }
         },
         onNavigateToProfileHub = {
-          // Section 2 & 12: When the user manually taps Profile, inspect authentication state:
-          // - If authenticated -> open existing Profile screen (`ROUTE_PROFILE_HUB`)
-          // - If unauthenticated -> open existing Login/Authentication screen (`ROUTE_LOGIN`)
-          if (isEffectiveSignedIn) {
-            val activeName = signedInUser?.displayName
-              ?: signUpViewModel.fullName.value.takeIf { it.isNotBlank() }
-            val activeUsername = profileCompletionViewModel.username.value.takeIf { it.isNotBlank() }
-              ?: signUpViewModel.username.value.takeIf { it.isNotBlank() }
-            profileHubViewModel.syncIdentity(
-              displayName = activeName,
-              username = activeUsername,
-              publicUid = publicUid
-            )
-            currentRoute = ROUTE_PROFILE_HUB
-          } else {
-            currentRoute = ROUTE_LOGIN
-          }
-        },
-        onNavigateToSettings = {
-          currentRoute = ROUTE_SETTINGS
-        },
-        onNavigateToNotifications = {
-          currentRoute = ROUTE_NOTIFICATION_CENTER
+          val activeName = signedInUser?.displayName
+            ?: signUpViewModel.fullName.value.takeIf { it.isNotBlank() }
+          val activeUsername = profileCompletionViewModel.username.value.takeIf { it.isNotBlank() }
+            ?: signUpViewModel.username.value.takeIf { it.isNotBlank() }
+          profileHubViewModel.syncIdentity(
+            displayName = activeName,
+            username = activeUsername,
+            publicUid = publicUid
+          )
+          currentRoute = ROUTE_PROFILE_HUB
         }
       )
     }

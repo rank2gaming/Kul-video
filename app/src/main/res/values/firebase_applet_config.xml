@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <resources>
-    <string name="firestore_database_id" translatable="false">ai-studio-android-cineflow-5f265f88-8fee-4ccd-82cf-8e5e6fc935c7</string>
+    <string name="firestore_database_id" translatable="false">ai-studio-android-kulvideo-fc8cfd05-fbaa-4a26-804d-60c407b86438</string>
     <string name="recaptcha_site_key" translatable="false">6LdPKhEuAAAAAKbiTVUd1EuusnWY-M3ipKXe7o80</string>
 </resources>

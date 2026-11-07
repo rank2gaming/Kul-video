@@ -108,8 +108,6 @@ fun HomeDashboardScreen(
   onNavigateToVideoEdit: () -> Unit,
   onAuthChanged: () -> Unit,
   onNavigateToProfileHub: () -> Unit = {},
-  onNavigateToSettings: (() -> Unit)? = null,
-  onNavigateToNotifications: (() -> Unit)? = null,
   modifier: Modifier = Modifier
 ) {
   val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
@@ -152,20 +150,8 @@ fun HomeDashboardScreen(
           when (tab) {
             BottomNavTab.HOME -> Unit
             BottomNavTab.PROJECTS -> onNavigateToVideoEdit()
-            BottomNavTab.NOTIFICATIONS -> {
-              if (onNavigateToNotifications != null) {
-                onNavigateToNotifications()
-              } else {
-                viewModel.showComingSoon("Notification Center")
-              }
-            }
-            BottomNavTab.SETTINGS -> {
-              if (onNavigateToSettings != null) {
-                onNavigateToSettings()
-              } else {
-                viewModel.showComingSoon("Settings")
-              }
-            }
+            BottomNavTab.NOTIFICATIONS -> viewModel.showComingSoon("Notification Center")
+            BottomNavTab.SETTINGS -> viewModel.showComingSoon("Settings")
           }
         }
       )
@@ -188,13 +174,7 @@ fun HomeDashboardScreen(
         HomeTopAppBar(
           isSignedIn = isSignedIn,
           onOverflowClick = { viewModel.setAccountSheetVisible(true) },
-          onNotificationsClick = {
-            if (onNavigateToNotifications != null) {
-              onNavigateToNotifications()
-            } else {
-              viewModel.showComingSoon("Notification Center")
-            }
-          },
+          onNotificationsClick = { viewModel.showComingSoon("Notification Center") },
           onAvatarClick = onNavigateToProfileHub
         )
 
